@@ -202,6 +202,20 @@ static const mips_def_t mips_defs[] =
         .mmu_type = MMU_TYPE_R4000,
     },
     {
+        .name = "jz4740",
+        .CP0_PRid = 0x0ad0024f,
+        .CP0_Config0 = 0x80000082,
+        .CP0_Config1 = 0x3E613080,
+        .CP0_Config7 = 0,
+        .SYNCI_Step = 32,
+        .CCRes = 2,
+        .CP0_Status_rw_bitmask = 0x1278FF17,
+        .SEGBITS = 32,
+        .PABITS = 32,
+        .insn_flags = CPU_MIPS32R2 | ASE_MIPS16,
+        .mmu_type = MMU_TYPE_R4000,
+    },
+    {
         .name = "4KEm",
         .CP0_PRid = 0x00019100,
         .CP0_Config0 = MIPS_CONFIG0 | (0x1 << CP0C0_AR) |

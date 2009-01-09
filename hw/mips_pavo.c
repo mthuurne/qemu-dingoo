@@ -70,7 +70,7 @@ static
                 PAVO_RAM_SIZE + JZ4740_SRAM_SIZE);
         exit(1);
     }
-    s->cpu = jz4740_init(PAVO_RAM_SIZE, NULL, NULL);
+    s->cpu = (struct jz_state_s *)jz4740_init(PAVO_RAM_SIZE, NULL, NULL, 12000000);
 
 }
 
@@ -85,4 +85,9 @@ QEMUMachine mips_pavo_machine = {
     .nodisk_ok = 1,
 };
 
+static void mips_pavo_machine_init(void)
+{
+    qemu_register_machine(&mips_pavo_machine);
+}
 
+machine_init(mips_pavo_machine_init);

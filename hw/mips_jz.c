@@ -43,10 +43,22 @@
 
 #define  DEBUG_FLAG  (DEBUG_CPM)
 
+
+struct jz4740_cpm_s *jz4740_cpm_init(struct jz_state_s *cpu);
+void jz4740_bandwidth_write8(void *opaque, target_phys_addr_t addr,
+                            uint32_t value);
+void jz4740_bandwidth_write16(void *opaque, target_phys_addr_t addr,
+                            uint32_t value);
+void jz4740_bandwidth_write32(void *opaque, target_phys_addr_t addr,
+                            uint32_t value);
+uint32_t jz4740_bandwidth_read8(void *opaque, target_phys_addr_t addr);
+uint32_t jz4740_bandwidth_read16(void *opaque, target_phys_addr_t addr);
+uint32_t jz4740_bandwidth_read32(void *opaque, target_phys_addr_t addr);
+
 #ifdef DEBUG
 
 FILE *fp;
-static void debug_init()
+static void debug_init(void)
 {
     fp = fopen("jz4740.txt", "w+");
     if (fp == NULL)
@@ -70,7 +82,7 @@ static void debug_out(uint32_t flag, const char *format, ...)
     }
 }
 #else
-static void debug_init()
+static void debug_init(void)
 {
 }
 static void debug_out(uint32_t flag, const char *format, ...)
@@ -146,12 +158,12 @@ struct jz4740_cpm_s
     uint32_t ssicdr;
 };
 
-static inline void jz4740_dump_clocks(struct clk *parent)
+static void jz4740_dump_clocks(struct clk *parent)
 {
     struct clk *i = parent;
 
     debug_out(DEBUG_CPM, "clock %x rate 0x%x \n", i->name, i->rate);
-    for (i = clk->child1; i; i = i->sibling)
+    for (i = i->child1; i; i = i->sibling)
         jz4740_dump_clocks(i);
 }
 
@@ -210,7 +222,7 @@ static inline void jz4740_cpccr_update(struct jz4740_cpm_s *s,
 static inline void jz4740_cppcr_update(struct jz4740_cpm_s *s,
                                        uint32_t new_value)
 {
-    uint32_t pllm, plln, pllod, pllbp, pllen, pllst, pllen, pllbp;
+    uint32_t pllm, plln, pllod, pllbp, pllen, pllst;
     uint32_t pll0[4] = { 1, 2, 2, 4 };
 
 
@@ -405,8 +417,15 @@ struct jz4740_cpm_s *jz4740_cpm_init(struct jz_state_s *cpu)
     iomemtype =
         cpu_register_io_memory(0, jz4740_cpm_readfn, jz4740_cpm_writefn, s);
     cpu_register_physical_memory(s->base, 0x00001000, iomemtype);
+    
+    return s;
 }
 
+
+static void jz4740_cpu_reset(void *opaque)
+{
+    fprintf(stderr, "%s: UNIMPLEMENTED!", __FUNCTION__);
+}
 
 struct jz_state_s *jz4740_init(unsigned long sdram_size,
                                DisplayState * ds, const char *core,
@@ -423,7 +442,7 @@ struct jz_state_s *jz4740_init(unsigned long sdram_size,
         fprintf(stderr, "Unable to find CPU definition\n");
         exit(1);
     }
-    qemu_register_reset(main_cpu_reset, env);
+    qemu_register_reset(jz4740_cpu_reset, s->env);
 
     s->sdram_size = sdram_size;
     s->sram_size = JZ4740_SRAM_SIZE;
@@ -439,5 +458,5 @@ struct jz_state_s *jz4740_init(unsigned long sdram_size,
     cpu_register_physical_memory(JZ4740_SDRAM_BASE, s->sdram_size,
                                  (sdram_base | IO_MEM_RAM));
 
-
+    return s;
 }

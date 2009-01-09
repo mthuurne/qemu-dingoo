@@ -18,13 +18,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
  */
+
 #ifndef _MIPS_JZ_H_
 #define _MIPS_JZ_H_
 
-
-
-
-
+#include "qemu-common.h"
 
 #define JZ4740_SRAM_SIZE	0x4000
 #define JZ4740_SRAM_BASE    0x80000000
@@ -173,5 +171,27 @@ struct jz_state_s {
 	
 	jz_clk clks;
 };
+
+struct clk {
+    const char *name;
+    const char *alias;
+    struct clk *parent;
+    struct clk *child1;
+    struct clk *sibling;
+
+    uint32_t flags;
+    int id;
+    int usecount;
+
+    int running;		/* Is currently ticking */
+    int enabled;		/* Is enabled, regardless of its input clk */
+    unsigned long rate;		/* Current rate (if .running) */
+    unsigned int divisor;	/* Rate relative to input (if .enabled) */
+    unsigned int multiplier;	/* Rate relative to input (if .enabled) */
+};
+
+struct jz_state_s *jz4740_init(unsigned long sdram_size,
+                               DisplayState * ds, const char *core,
+                               uint32_t osc_extal_freq);
 
 #endif

@@ -78,7 +78,7 @@ static void debug_out(uint32_t flag, const char *format, ...)
 }
 #endif
 
-uint32_t jz4740_badwidth_read8(void *opaque, target_phys_addr_t addr)
+uint32_t jz4740_bandwidth_read8(void *opaque, target_phys_addr_t addr)
 {
     uint8_t ret;
 
@@ -87,7 +87,7 @@ uint32_t jz4740_badwidth_read8(void *opaque, target_phys_addr_t addr)
     return ret;
 }
 
-void jz4740_badwidth_write8(void *opaque, target_phys_addr_t addr,
+void jz4740_bandwidth_write8(void *opaque, target_phys_addr_t addr,
                             uint32_t value)
 {
     uint8_t val8 = value;
@@ -96,7 +96,7 @@ void jz4740_badwidth_write8(void *opaque, target_phys_addr_t addr,
     cpu_physical_memory_write(addr, (void *) &val8, 1);
 }
 
-uint32_t jz4740_badwidth_read16(void *opaque, target_phys_addr_t addr)
+uint32_t jz4740_bandwidth_read16(void *opaque, target_phys_addr_t addr)
 {
     uint16_t ret;
     JZ4740_16B_REG(addr);
@@ -104,7 +104,7 @@ uint32_t jz4740_badwidth_read16(void *opaque, target_phys_addr_t addr)
     return ret;
 }
 
-void jz4740_badwidth_write16(void *opaque, target_phys_addr_t addr,
+void jz4740_bandwidth_write16(void *opaque, target_phys_addr_t addr,
                              uint32_t value)
 {
     uint16_t val16 = value;
@@ -113,7 +113,7 @@ void jz4740_badwidth_write16(void *opaque, target_phys_addr_t addr,
     cpu_physical_memory_write(addr, (void *) &val16, 2);
 }
 
-uint32_t jz4740_badwidth_read32(void *opaque, target_phys_addr_t addr)
+uint32_t jz4740_bandwidth_read32(void *opaque, target_phys_addr_t addr)
 {
     uint32_t ret;
 
@@ -122,7 +122,7 @@ uint32_t jz4740_badwidth_read32(void *opaque, target_phys_addr_t addr)
     return ret;
 }
 
-void jz4740_badwidth_write32(void *opaque, target_phys_addr_t addr,
+void jz4740_bandwidth_write32(void *opaque, target_phys_addr_t addr,
                              uint32_t value)
 {
     JZ4740_32B_REG(addr);
@@ -371,14 +371,14 @@ static uint32_t jz474_cpm_read(void *opaque, target_phys_addr_t addr)
 
 
 static CPUReadMemoryFunc *jz4740_cpm_readfn[] = {
-    jz4740_badwidth_read32,
-    jz4740_badwidth_read32,
+    jz4740_bandwidth_read32,
+    jz4740_bandwidth_read32,
     jz474_cpm_read,
 };
 
 static CPUWriteMemoryFunc *jz4740_cpm_writefn[] = {
-    jz4740_badwidth_write32,
-    jz4740_badwidth_write32,
+    jz4740_bandwidth_write32,
+    jz4740_bandwidth_write32,
     jz4740_cpm_write,
 };
 
@@ -431,7 +431,7 @@ struct jz_state_s *jz4740_init(unsigned long sdram_size,
     /* Clocks */
     jz_clk_init(s, osc_extal_freq);
 
-    /*map sram to 0x80000000 and sdram to 0x80004000 */
+    /* map sram to 0x80000000 and sdram to 0x80004000 */
     sram_base = qemu_ram_alloc(s->sram_size);
     cpu_register_physical_memory(JZ4740_SRAM_BASE, s->sram_size,
                                  (sram_base | IO_MEM_RAM));

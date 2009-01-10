@@ -571,6 +571,11 @@ static void jz4740_emc_init(struct jz_state_s  *soc,qemu_irq irq)
 	
 }
 
+static void jz4740_cpu_reset(void *opaque)
+{
+    fprintf(stderr, "%s: UNIMPLEMENTED!", __FUNCTION__);
+}
+
 struct jz_state_s *jz4740_init(unsigned long sdram_size,
                                                               uint32_t osc_extal_freq)
 {
@@ -587,7 +592,7 @@ struct jz_state_s *jz4740_init(unsigned long sdram_size,
         fprintf(stderr, "Unable to find CPU definition\n");
         exit(1);
     }
-    qemu_register_reset(main_cpu_reset, env);
+    qemu_register_reset(jz4740_cpu_reset, env);
 
     s->sdram_size = sdram_size;
     s->sram_size = JZ4740_SRAM_SIZE;

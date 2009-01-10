@@ -80,7 +80,7 @@ struct mips_pavo_s
 
 
 QEMUMachine mips_pavo_machine = {
-    .name = "pvao",
+    .name = "pavo",
     .desc = "JZ Pavo demo board",
     .init = mips_pavo_init,
     .ram_require = (JZ4740_SRAM_SIZE + PAVO_RAM_SIZE) | RAMSIZE_FIXED,

@@ -30,7 +30,7 @@
  */
 
 #include "hw.h"
-#include "arm-misc.h"
+#include "mips.h"
 #include "mips_jz.h"
 #include "sysemu.h"
 #include "qemu-timer.h"
@@ -42,6 +42,7 @@
 #define DEBUG_CPM                     (1<<0x1)
 
 #define  DEBUG_FLAG  (DEBUG_CPM)
+
 
 #ifdef DEBUG
 
@@ -70,15 +71,11 @@ static void debug_out(uint32_t flag, const char *format, ...)
     }
 }
 #else
-static void debug_init()
-{
-}
-static void debug_out(uint32_t flag, const char *format, ...)
-{
-}
+static void debug_init(void) { }
+static void debug_out(uint32_t flag, const char *format, ...){}
 #endif
 
-uint32_t jz4740_badwidth_read8(void *opaque, target_phys_addr_t addr)
+static uint32_t jz4740_badwidth_read8(void *opaque, target_phys_addr_t addr)
 {
     uint8_t ret;
 
@@ -87,7 +84,7 @@ uint32_t jz4740_badwidth_read8(void *opaque, target_phys_addr_t addr)
     return ret;
 }
 
-void jz4740_badwidth_write8(void *opaque, target_phys_addr_t addr,
+static void jz4740_badwidth_write8(void *opaque, target_phys_addr_t addr,
                             uint32_t value)
 {
     uint8_t val8 = value;
@@ -96,7 +93,7 @@ void jz4740_badwidth_write8(void *opaque, target_phys_addr_t addr,
     cpu_physical_memory_write(addr, (void *) &val8, 1);
 }
 
-uint32_t jz4740_badwidth_read16(void *opaque, target_phys_addr_t addr)
+static uint32_t jz4740_badwidth_read16(void *opaque, target_phys_addr_t addr)
 {
     uint16_t ret;
     JZ4740_16B_REG(addr);
@@ -104,7 +101,7 @@ uint32_t jz4740_badwidth_read16(void *opaque, target_phys_addr_t addr)
     return ret;
 }
 
-void jz4740_badwidth_write16(void *opaque, target_phys_addr_t addr,
+static void jz4740_badwidth_write16(void *opaque, target_phys_addr_t addr,
                              uint32_t value)
 {
     uint16_t val16 = value;
@@ -113,7 +110,7 @@ void jz4740_badwidth_write16(void *opaque, target_phys_addr_t addr,
     cpu_physical_memory_write(addr, (void *) &val16, 2);
 }
 
-uint32_t jz4740_badwidth_read32(void *opaque, target_phys_addr_t addr)
+static uint32_t jz4740_badwidth_read32(void *opaque, target_phys_addr_t addr)
 {
     uint32_t ret;
 
@@ -122,7 +119,7 @@ uint32_t jz4740_badwidth_read32(void *opaque, target_phys_addr_t addr)
     return ret;
 }
 
-void jz4740_badwidth_write32(void *opaque, target_phys_addr_t addr,
+static void jz4740_badwidth_write32(void *opaque, target_phys_addr_t addr,
                              uint32_t value)
 {
     JZ4740_32B_REG(addr);
@@ -146,12 +143,12 @@ struct jz4740_cpm_s
     uint32_t ssicdr;
 };
 
-static inline void jz4740_dump_clocks(struct clk *parent)
+static void  jz4740_dump_clocks(jz_clk parent)
 {
-    struct clk *i = parent;
+    jz_clk i = parent;
 
     debug_out(DEBUG_CPM, "clock %x rate 0x%x \n", i->name, i->rate);
-    for (i = clk->child1; i; i = i->sibling)
+    for (i = i->child1; i; i = i->sibling)
         jz4740_dump_clocks(i);
 }
 
@@ -165,9 +162,9 @@ static inline void jz4740_cpccr_update(struct jz4740_cpm_s *s,
         return;
 
     if (new_value & CPM_CPCCR_PCS)
-        jz_clk_setrate(jz_findclk(s->cpu, "pll_divider"), 1, 1);
+        jz_clk_setrate(jz_findclk(s->soc, "pll_divider"), 1, 1);
     else
-        jz_clk_setrate(jz_findclk(s->cpu, "pll_divider"), 2, 1);
+        jz_clk_setrate(jz_findclk(s->soc, "pll_divider"), 2, 1);
 
 
     ldiv = (new_value & CPM_CPCCR_LDIV_MASK) >> CPM_CPCCR_LDIV_BIT;
@@ -179,38 +176,38 @@ static inline void jz4740_cpccr_update(struct jz4740_cpm_s *s,
     cdiv = div_table[(new_value & CPM_CPCCR_CDIV_MASK) >> CPM_CPCCR_CDIV_BIT];
     udiv = div_table[(new_value & CPM_CPCCR_UDIV_MASK) >> CPM_CPCCR_UDIV_BIT];
 
-    jz_clk_setrate(jz_findclk(s->cpu, "ldclk"), ldiv, 1);
-    jz_clk_setrate(jz_findclk(s->cpu, "mclk"), mdiv, 1);
-    jz_clk_setrate(jz_findclk(s->cpu, "pclk"), pdiv, 1);
-    jz_clk_setrate(jz_findclk(s->cpu, "hclk"), hdiv, 1);
-    jz_clk_setrate(jz_findclk(s->cpu, "cclk"), cdiv, 1);
-    jz_clk_setrate(jz_findclk(s->cpu, "usbclk"), udiv, 1);
+    jz_clk_setrate(jz_findclk(s->soc, "ldclk"), ldiv, 1);
+    jz_clk_setrate(jz_findclk(s->soc, "mclk"), mdiv, 1);
+    jz_clk_setrate(jz_findclk(s->soc, "pclk"), pdiv, 1);
+    jz_clk_setrate(jz_findclk(s->soc, "hclk"), hdiv, 1);
+    jz_clk_setrate(jz_findclk(s->soc, "cclk"), cdiv, 1);
+    jz_clk_setrate(jz_findclk(s->soc, "usbclk"), udiv, 1);
 
     if (new_value & CPM_CPCCR_UCS)
-        jz_clk_reparent(jz_findclk(s->cpu, "usbclk"),
-                        jz_findclk(s->cpu, "pll_divider"));
+        jz_clk_reparent(jz_findclk(s->soc, "usbclk"),
+                        jz_findclk(s->soc, "pll_divider"));
     else
-        jz_clk_reparent(jz_findclk(s->cpu, "usbclk"),
-                        jz_findclk(s->cpu, "osc_extal"));
+        jz_clk_reparent(jz_findclk(s->soc, "usbclk"),
+                        jz_findclk(s->soc, "osc_extal"));
 
     if (new_value & CPM_CPCCR_I2CS)
-        jz_clk_reparent(jz_findclk(s->cpu, "i2sclk"),
-                        jz_findclk(s->cpu, "pll_divider"));
+        jz_clk_reparent(jz_findclk(s->soc, "i2sclk"),
+                        jz_findclk(s->soc, "pll_divider"));
     else
-        jz_clk_reparent(jz_findclk(s->cpu, "i2sclk"),
-                        jz_findclk(s->cpu, "osc_extal"));
+        jz_clk_reparent(jz_findclk(s->soc, "i2sclk"),
+                        jz_findclk(s->soc, "osc_extal"));
 
     s->cpccr = new_value;
 
     debug_out(DEBUG_CPM, "write to cpccr 0x%x\n", new_value);
-    jz4740_dump_clocks(jz_findclk(s->cpu, "osc_extal"));
+    jz4740_dump_clocks(jz_findclk(s->soc, "osc_extal"));
 
 }
 
 static inline void jz4740_cppcr_update(struct jz4740_cpm_s *s,
                                        uint32_t new_value)
 {
-    uint32_t pllm, plln, pllod, pllbp, pllen, pllst, pllen, pllbp;
+    uint32_t pllm, plln, pllod, pllbp, pllen;
     uint32_t pll0[4] = { 1, 2, 2, 4 };
 
 
@@ -218,7 +215,7 @@ static inline void jz4740_cppcr_update(struct jz4740_cpm_s *s,
     pllbp = new_value & CPM_CPPCR_PLLBP;
     if ((!pllen) || (pllen && pllbp))
     {
-        jz_clk_setrate(jz_findclk(s->cpu, "pll_output"), 1, 1);
+        jz_clk_setrate(jz_findclk(s->soc, "pll_output"), 1, 1);
         debug_out(DEBUG_CPM, "pll is bypassed \n");
         s->cppcr = new_value | CPM_CPPCR_PLLS;
         return;
@@ -228,13 +225,13 @@ static inline void jz4740_cppcr_update(struct jz4740_cpm_s *s,
     pllm = (new_value & CPM_CPPCR_PLLM_MASK) >> CPM_CPPCR_PLLM_BIT;
     plln = (new_value & CPM_CPPCR_PLLN_MASK) >> CPM_CPPCR_PLLN_BIT;
     pllod = (new_value & CPM_CPPCR_PLLOD_MASK) >> CPM_CPPCR_PLLOD_BIT;
-    jz_clk_setrate(jz_findclk(s->cpu, "pll_output"), (plln + 2) * pll0[pllod],
+    jz_clk_setrate(jz_findclk(s->soc, "pll_output"), (plln + 2) * pll0[pllod],
                    pllm + 2);
 
     s->cppcr = new_value;
 
     debug_out(DEBUG_CPM, "write to cppcr 0x%x\n", new_value);
-    jz4740_dump_clocks(jz_findclk(s->cpu, "osc_extal"));
+    jz4740_dump_clocks(jz_findclk(s->soc, "osc_extal"));
 
 }
 
@@ -248,12 +245,12 @@ static inline void jz4740_i2scdr_update(struct jz4740_cpm_s *s,
         return;
 
 
-    jz_clk_setrate(jz_findclk(s->cpu, "i2sclk"), i2scdr + 1, 1);
+    jz_clk_setrate(jz_findclk(s->soc, "i2sclk"), i2scdr + 1, 1);
 
     s->i2scdr = i2scdr;
 
     debug_out(DEBUG_CPM, "write to i2scdr 0x%x\n", new_value);
-    jz4740_dump_clocks(jz_findclk(s->cpu, "osc_extal"));
+    jz4740_dump_clocks(jz_findclk(s->soc, "osc_extal"));
 
 }
 
@@ -278,12 +275,12 @@ static inline void jz4740_msccdr_update(struct jz4740_cpm_s *s,
         return;
 
 
-    jz_clk_setrate(jz_findclk(s->cpu, "mscclk"), msccdr + 1, 1);
+    jz_clk_setrate(jz_findclk(s->soc, "mscclk"), msccdr + 1, 1);
 
     s->msccdr = msccdr;
 
     debug_out(DEBUG_CPM, "write to msccdr 0x%x\n", new_value);
-    jz4740_dump_clocks(jz_findclk(s->cpu, "osc_extal"));
+    jz4740_dump_clocks(jz_findclk(s->soc, "osc_extal"));
 
 }
 
@@ -330,7 +327,7 @@ static void jz4740_cpm_write(void *opaque, target_phys_addr_t addr,
         s->ssicdr = value & 0xf;
         break;
     default:
-        cpu_abort(s->cpu->env,
+        cpu_abort(s->soc->env,
                   "jz4740_cpm_write undefined addr " JZ_FMT_plx "  value %x \n",
                   addr, value);
     }
@@ -362,7 +359,7 @@ static uint32_t jz474_cpm_read(void *opaque, target_phys_addr_t addr)
     case 0x74:
         return s->ssicdr;
     default:
-        cpu_abort(s->cpu->env,
+        cpu_abort(s->soc->env,
                   "jz474_cpm_read undefined addr " JZ_FMT_plx "  \n", addr);
     }
 
@@ -406,6 +403,7 @@ static struct jz4740_cpm_s *jz4740_cpm_init(struct jz_state_s *soc)
     iomemtype =
         cpu_register_io_memory(0, jz4740_cpm_readfn, jz4740_cpm_writefn, s);
     cpu_register_physical_memory(s->base, 0x00001000, iomemtype);
+    return s;
 }
 
 
@@ -443,10 +441,11 @@ static uint32_t jz4740_intc_read(void *opaque, target_phys_addr_t addr)
     case 0x10:
         return s->icpr;
     default:
-        cpu_abort(s->cpu->env,
+        cpu_abort(s->soc->env,
                   "jz4740_intc_read undefined addr " JZ_FMT_plx "  \n", addr);
 
     }
+    return (0);
 }
 
 static void jz4740_intc_write(void *opaque, target_phys_addr_t addr,
@@ -471,8 +470,8 @@ static void jz4740_intc_write(void *opaque, target_phys_addr_t addr,
         s->icmr &= ~value;
         break;
     default:
-        cpu_abort(s->cpu->env,
-                  "jz4740_intc_write undefined addr value %x" JZ_FMT_plx "  \n",
+        cpu_abort(s->soc->env,
+                  "jz4740_intc_write undefined addr " JZ_FMT_plx "  value %x \n",
                   addr, value);
     }
 }
@@ -592,12 +591,17 @@ struct jz_state_s *jz4740_init(unsigned long sdram_size,
         fprintf(stderr, "Unable to find CPU definition\n");
         exit(1);
     }
-    qemu_register_reset(jz4740_cpu_reset, env);
+
+    debug_init();
+    qemu_register_reset(jz4740_cpu_reset, s->env);
 
     s->sdram_size = sdram_size;
     s->sram_size = JZ4740_SRAM_SIZE;
 
-    /*map sram to 0x80000000 and sdram to 0x80004000 */
+    /* Clocks */
+    jz_clk_init(s, osc_extal_freq);
+
+	/*map sram to 0x80000000 and sdram to 0x80004000 */
     sram_base = qemu_ram_alloc(s->sram_size);
     cpu_register_physical_memory(JZ4740_SRAM_BASE, s->sram_size,
                                  (sram_base | IO_MEM_RAM));
@@ -606,18 +610,16 @@ struct jz_state_s *jz4740_init(unsigned long sdram_size,
                                  (sdram_base | IO_MEM_RAM));
 
     /* Init internal devices */
-    cpu_mips_irq_init_cpu(env);
-    cpu_mips_clock_init(env);
+    cpu_mips_irq_init_cpu(s->env);
+    cpu_mips_clock_init(s->env);
 
     
     /* Clocks */
     jz_clk_init(s, osc_extal_freq);
 
     intc = jz4740_intc_init(s,s->env->irq[2]);
-    jz4740_cpm_init(s);
-    	
+    s->cpm = jz4740_cpm_init(s);
 
-
-
-
+    return s;
 }
+

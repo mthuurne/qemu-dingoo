@@ -59,9 +59,7 @@ struct mips_pavo_s
 
 
 
-
-static
-    void mips_pvao_init(ram_addr_t ram_size, int vga_ram_size,
+    void mips_pavo_init(ram_addr_t ram_size, int vga_ram_size,
                         const char *boot_device, DisplayState * ds,
                         const char *kernel_filename, const char *kernel_cmdline,
                         const char *initrd_filename, const char *cpu_model)
@@ -84,7 +82,7 @@ static
 QEMUMachine mips_pavo_machine = {
     .name = "pvao",
     .desc = "JZ Pavo demo board",
-    .init = mips_pvao_init,
+    .init = mips_pavo_init,
     .ram_require = (JZ4740_SRAM_SIZE + PAVO_RAM_SIZE) | RAMSIZE_FIXED,
     .nodisk_ok = 1,
 };

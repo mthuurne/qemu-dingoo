@@ -31,22 +31,6 @@
 #define CLOCK_IN_JZ4750	 (1 << 12)
 
 
-struct clk {
-    const char *name;
-    const char *alias;
-    struct clk *parent;
-    struct clk *child1;
-    struct clk *sibling;
-
-    uint32_t flags;
-    int id;
-
-    int running;		/* Is currently ticking */
-    int enabled;		/* Is enabled, regardless of its input clk */
-    unsigned long rate;		/* Current rate (if .running) */
-    unsigned int divisor;	/* Rate relative to input (if .enabled) */
-    unsigned int multiplier;	/* Rate relative to input (if .enabled) */
-};
 
 static struct clk osc_extal = {
     .name	= "osc_extal_12M",
@@ -269,7 +253,7 @@ void jz_clk_setrate(struct clk *clk, int divide, int multiply)
     jz_clk_rate_update(clk);
 }
 
-int64_t jz_clk_getrate(omap_clk clk)
+int64_t jz_clk_getrate(struct clk *clk)
 {
     return clk->rate;
 }

@@ -21,8 +21,7 @@
 #ifndef _MIPS_JZ_H_
 #define _MIPS_JZ_H_
 
-
-
+#include "qemu-common.h"
 
 
 
@@ -130,7 +129,7 @@
 #define JZ4740_WO_REG(paddr)		\
         fprintf(stderr, "%s: read from write only 32-bit register " JZ_FMT_plx "\n",	\
                         __FUNCTION__, paddr)
-# else
+#else
 #define JZ4740_8B_REG(paddr)
 #define JZ4740_16B_REG(paddr)
 #define JZ4740_32B_REG(paddr)
@@ -145,6 +144,23 @@ struct jz_state_s;
 
 
 /*mips_jz_clk.c*/
+struct clk {
+    const char *name;
+    const char *alias;
+    struct clk *parent;
+    struct clk *child1;
+    struct clk *sibling;
+
+    uint32_t flags;
+    int id;
+
+    int running;		/* Is currently ticking */
+    int enabled;		/* Is enabled, regardless of its input clk */
+    unsigned long rate;		/* Current rate (if .running) */
+    unsigned int divisor;	/* Rate relative to input (if .enabled) */
+    unsigned int multiplier;	/* Rate relative to input (if .enabled) */
+    int usecount;
+};
 typedef struct clk *jz_clk;
 void jz_clk_init(struct jz_state_s *mpu,uint32_t osc_extal_freq);
 jz_clk jz_findclk(struct jz_state_s *mpu, const char *name);
@@ -159,12 +175,6 @@ void jz_clk_reparent(jz_clk clk, jz_clk parent);
 /*mips_jz.c*/
 struct jz_state_s *jz4740_init(unsigned long sdram_size,
                                                               uint32_t osc_extal_freq);
-struct jz4740_cpm_s *jz4740_cpm_init(struct jz_state_s *soc);
-qemu_irq *jz4740_intc_init(struct jz_state_s  *soc,qemu_irq parent_irq);
-
-
-
-
 
 enum jz_cpu_model {
         jz4740,
@@ -181,8 +191,11 @@ struct jz_state_s {
 	unsigned long sdram_size;
     unsigned long sram_size;
 
-
 	jz_clk clks;
+
+	struct jz4740_cpm_s *cpm;
+
+
 };
 
 #endif

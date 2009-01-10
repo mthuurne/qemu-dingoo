@@ -44,20 +44,24 @@
 
 
 #define PAVO_RAM_SIZE       (0x4000000) /*64M */
-
+#define PAVO_OSC_EXTAL     (12000000)  /*12MHZ*/
 
 /* pavo board support */
 struct mips_pavo_s
 {
-    struct jz_state_s *cpu;
+    struct jz_state_s *soc;
 };
 
 
 
 
 
+
+
+
+
 static
-    void mips_pavo_init(ram_addr_t ram_size, int vga_ram_size,
+    void mips_pvao_init(ram_addr_t ram_size, int vga_ram_size,
                         const char *boot_device, DisplayState * ds,
                         const char *kernel_filename, const char *kernel_cmdline,
                         const char *initrd_filename, const char *cpu_model)
@@ -70,7 +74,7 @@ static
                 PAVO_RAM_SIZE + JZ4740_SRAM_SIZE);
         exit(1);
     }
-    s->cpu = (struct jz_state_s *)jz4740_init(PAVO_RAM_SIZE, NULL, NULL, 12000000);
+    s->soc = jz4740_init(PAVO_RAM_SIZE, PAVO_OSC_EXTAL);
 
 }
 
@@ -78,9 +82,9 @@ static
 
 
 QEMUMachine mips_pavo_machine = {
-    .name = "pavo",
+    .name = "pvao",
     .desc = "JZ Pavo demo board",
-    .init = mips_pavo_init,
+    .init = mips_pvao_init,
     .ram_require = (JZ4740_SRAM_SIZE + PAVO_RAM_SIZE) | RAMSIZE_FIXED,
     .nodisk_ok = 1,
 };

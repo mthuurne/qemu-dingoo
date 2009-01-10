@@ -18,18 +18,17 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
  */
-
 #ifndef _MIPS_JZ_H_
 #define _MIPS_JZ_H_
 
-#include "qemu-common.h"
+
+
+
+
 
 #define JZ4740_SRAM_SIZE	0x4000
-#define JZ4740_SRAM_BASE    0x80000000
-#define JZ4740_SDRAM_BASE   0x80004000
-
-#define JZ4740_ROM_BASE     0xBFC00000
-#define JZ4740_ROM_SIZE     0x1000
+#define JZ4740_SRAM_BASE 0x80000000
+#define JZ4740_SDRAM_BASE 0x80004000
 
 #define JZ4740_PHYS_BASE(a) ((a)-0xa0000000)
 
@@ -113,9 +112,9 @@
 #endif
 
 
-#define TCMI_VERBOSE			1
+#define IO_ACCESS_VERBOSE			1
 
-#ifdef TCMI_VERBOSE
+#ifdef IO_ACCESS_VERBOSE
 #define JZ4740_8B_REG(paddr)		\
         fprintf(stderr, "%s: 8-bit register " JZ_FMT_plx "\n",	\
                         __FUNCTION__, paddr)
@@ -125,10 +124,18 @@
 #define JZ4740_32B_REG(paddr)		\
         fprintf(stderr, "%s: 32-bit register " JZ_FMT_plx "\n",	\
                         __FUNCTION__, paddr)
+#define JZ4740_RO_REG(paddr)		\
+        fprintf(stderr, "%s: write to read only 32-bit register " JZ_FMT_plx "\n",	\
+                        __FUNCTION__, paddr)
+#define JZ4740_WO_REG(paddr)		\
+        fprintf(stderr, "%s: read from write only 32-bit register " JZ_FMT_plx "\n",	\
+                        __FUNCTION__, paddr)
 # else
 #define JZ4740_8B_REG(paddr)
 #define JZ4740_16B_REG(paddr)
 #define JZ4740_32B_REG(paddr)
+#define JZ4740_RO_REG(paddr)
+#define JZ4740_WO_REG(paddr)
 #endif
 
 
@@ -149,6 +156,12 @@ void jz_clk_setrate(jz_clk clk, int divide, int multiply);
 int64_t jz_clk_getrate(jz_clk clk);
 void jz_clk_reparent(jz_clk clk, jz_clk parent);
 
+/*mips_jz.c*/
+struct jz_state_s *jz4740_init(unsigned long sdram_size,
+                                                              uint32_t osc_extal_freq);
+struct jz4740_cpm_s *jz4740_cpm_init(struct jz_state_s *soc);
+qemu_irq *jz4740_intc_init(struct jz_state_s  *soc,qemu_irq parent_irq);
+
 
 
 
@@ -168,30 +181,8 @@ struct jz_state_s {
 	unsigned long sdram_size;
     unsigned long sram_size;
 
-	
+
 	jz_clk clks;
 };
-
-struct clk {
-    const char *name;
-    const char *alias;
-    struct clk *parent;
-    struct clk *child1;
-    struct clk *sibling;
-
-    uint32_t flags;
-    int id;
-    int usecount;
-
-    int running;		/* Is currently ticking */
-    int enabled;		/* Is enabled, regardless of its input clk */
-    unsigned long rate;		/* Current rate (if .running) */
-    unsigned int divisor;	/* Rate relative to input (if .enabled) */
-    unsigned int multiplier;	/* Rate relative to input (if .enabled) */
-};
-
-struct jz_state_s *jz4740_init(unsigned long sdram_size,
-                               DisplayState * ds, const char *core,
-                               uint32_t osc_extal_freq);
 
 #endif

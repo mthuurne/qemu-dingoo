@@ -194,6 +194,7 @@ struct jz_state_s {
 	jz_clk clks;
 
 	struct jz4740_cpm_s *cpm;
+	struct jz4740_emc_s *emc;
 
 
 };

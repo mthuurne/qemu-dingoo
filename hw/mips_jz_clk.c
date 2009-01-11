@@ -19,7 +19,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA 02111-1307 USA
  */
- 
+
 #include "hw.h"
 #include "mips_jz.h"
 
@@ -33,119 +33,119 @@
 
 
 static struct clk osc_extal = {
-    .name	= "osc_extal_12M",
-    .rate	= 12000000,
-    .flags	= ALWAYS_ENABLED | CLOCK_IN_JZ4740,
+    .name = "osc_extal_12M",
+    .rate = 12000000,
+    .flags = ALWAYS_ENABLED | CLOCK_IN_JZ4740,
 };
 
 static struct clk osc_32K = {
-    .name	= "osc_32K",
-    .rate	= 32768,
-    .flags	= ALWAYS_ENABLED | CLOCK_IN_JZ4740,
+    .name = "osc_32K",
+    .rate = 32768,
+    .flags = ALWAYS_ENABLED | CLOCK_IN_JZ4740,
 };
 
 static struct clk lcd_pclk = {
-    .name	= "lcd_pclk",
-    //.rate	= ??,
-    //.flags	= ALWAYS_ENABLED | CLOCK_IN_JZ4740,
+    .name = "lcd_pclk",
+    //.rate     = ??,
+    //.flags    = ALWAYS_ENABLED | CLOCK_IN_JZ4740,
 };
 
 static struct clk pll_output = {
-    .name	= "pll_output",
+    .name = "pll_output",
     .parent = &osc_extal,
-    .flags	= ALWAYS_ENABLED | CLOCK_IN_JZ4740,
+    .flags = ALWAYS_ENABLED | CLOCK_IN_JZ4740,
 };
 
-static struct clk pll_divider= {
-    .name	= "pll_divider",
+static struct clk pll_divider = {
+    .name = "pll_divider",
     .parent = &pll_output,
-    .flags	= ALWAYS_ENABLED | CLOCK_IN_JZ4740,
+    .flags = ALWAYS_ENABLED | CLOCK_IN_JZ4740,
 };
 
-static struct clk cclk= {
-    .name	= "cclk",
+static struct clk cclk = {
+    .name = "cclk",
     .parent = &pll_output,
-    .flags	= ALWAYS_ENABLED | CLOCK_IN_JZ4740,
+    .flags = ALWAYS_ENABLED | CLOCK_IN_JZ4740,
 };
 
-static struct clk pclk= {
-    .name	= "pclk",
+static struct clk pclk = {
+    .name = "pclk",
     .parent = &pll_output,
-    .flags	= ALWAYS_ENABLED | CLOCK_IN_JZ4740,
+    .flags = ALWAYS_ENABLED | CLOCK_IN_JZ4740,
 };
 
-static struct clk hclk= {
-    .name	= "hclk",
+static struct clk hclk = {
+    .name = "hclk",
     .parent = &pll_output,
-    .flags	= ALWAYS_ENABLED | CLOCK_IN_JZ4740,
+    .flags = ALWAYS_ENABLED | CLOCK_IN_JZ4740,
 };
 
-static struct clk mclk= {
-    .name	= "mclk",
+static struct clk mclk = {
+    .name = "mclk",
     .parent = &pll_output,
-    .flags	= ALWAYS_ENABLED | CLOCK_IN_JZ4740,
+    .flags = ALWAYS_ENABLED | CLOCK_IN_JZ4740,
 };
 
-static struct clk ldclk= {
-    .name	= "ldclk",
+static struct clk ldclk = {
+    .name = "ldclk",
     .parent = &pll_divider,
-    .flags	= ALWAYS_ENABLED | CLOCK_IN_JZ4740,
+    .flags = ALWAYS_ENABLED | CLOCK_IN_JZ4740,
 };
 
-static struct clk lpclk= {
-    .name	= "lpclk",
+static struct clk lpclk = {
+    .name = "lpclk",
     .parent = &pll_divider,
-    .flags	= ALWAYS_ENABLED | CLOCK_IN_JZ4740,
+    .flags = ALWAYS_ENABLED | CLOCK_IN_JZ4740,
 };
 
-static struct clk i2sclk= {
-    .name	= "i2sclk",
+static struct clk i2sclk = {
+    .name = "i2sclk",
     .parent = &pll_divider,
-    .flags	= ALWAYS_ENABLED | CLOCK_IN_JZ4740,
+    .flags = ALWAYS_ENABLED | CLOCK_IN_JZ4740,
 };
 
-static struct clk mscclk= {
-    .name	= "mscclk",
+static struct clk mscclk = {
+    .name = "mscclk",
     .parent = &pll_divider,
-    .flags	= ALWAYS_ENABLED | CLOCK_IN_JZ4740,
+    .flags = ALWAYS_ENABLED | CLOCK_IN_JZ4740,
 };
 
-static struct clk usbclk= {
-    .name	= "usbclk",
+static struct clk usbclk = {
+    .name = "usbclk",
     .parent = &pll_divider,
-    .flags	= ALWAYS_ENABLED | CLOCK_IN_JZ4740,
+    .flags = ALWAYS_ENABLED | CLOCK_IN_JZ4740,
 };
 
-static struct clk ssiclk= {
-    .name	= "ssiclk",
+static struct clk ssiclk = {
+    .name = "ssiclk",
     .parent = &pll_divider,
-    .flags	= ALWAYS_ENABLED | CLOCK_IN_JZ4740,
+    .flags = ALWAYS_ENABLED | CLOCK_IN_JZ4740,
 };
 
 
 static struct clk *onchip_clks[] = {
-	&osc_extal,
-	&lcd_pclk,
-	&osc_32K,
-	&pll_output,
-	&pll_divider,
-	&cclk,
-	&pclk,
-	&hclk,
-	&mclk,
-	&ldclk,
-	&lpclk,
-	&i2sclk,
-	&mscclk,
-	&usbclk,
-	&ssiclk,
+    &osc_extal,
+    &lcd_pclk,
+    &osc_32K,
+    &pll_output,
+    &pll_divider,
+    &cclk,
+    &pclk,
+    &hclk,
+    &mclk,
+    &ldclk,
+    &lpclk,
+    &i2sclk,
+    &mscclk,
+    &usbclk,
+    &ssiclk,
 };
 
 struct clk *jz_findclk(struct jz_state_s *cpu, const char *name)
 {
     struct clk *i;
 
-    for (i = cpu->clks; i->name; i ++)
+    for (i = cpu->clks; i->name; i++)
         if (!strcmp(i->name, name) || (i->alias && !strcmp(i->alias, name)))
             return i;
     cpu_abort(cpu->env, "%s: %s not found\n", __FUNCTION__, name);
@@ -153,14 +153,14 @@ struct clk *jz_findclk(struct jz_state_s *cpu, const char *name)
 
 void jz_clk_get(struct clk *clk)
 {
-    clk->usecount ++;
+    clk->usecount++;
 }
 
 void jz_clk_put(struct clk *clk)
 {
-    if (!(clk->usecount --))
+    if (!(clk->usecount--))
         cpu_abort(cpu_single_env, "%s: %s is not in use\n",
-                        __FUNCTION__, clk->name);
+                  __FUNCTION__, clk->name);
 }
 
 static void jz_clk_update(struct clk *clk)
@@ -175,8 +175,9 @@ static void jz_clk_update(struct clk *clk)
         parent = 1;
 
     running = parent && (clk->enabled ||
-                    ((clk->flags & ALWAYS_ENABLED) && clk->usecount));
-    if (clk->running != running) {
+                         ((clk->flags & ALWAYS_ENABLED) && clk->usecount));
+    if (clk->running != running)
+    {
         clk->running = running;
         //for (user = clk->users; *user; user ++)
         //    qemu_set_irq(*user, running);
@@ -186,7 +187,8 @@ static void jz_clk_update(struct clk *clk)
 }
 
 static void jz_clk_rate_update_full(struct clk *clk, unsigned long int rate,
-                unsigned long int div, unsigned long int mult)
+                                    unsigned long int div,
+                                    unsigned long int mult)
 {
     struct clk *i;
     //qemu_irq *user;
@@ -195,9 +197,9 @@ static void jz_clk_rate_update_full(struct clk *clk, unsigned long int rate,
     if (clk->running)
         //for (user = clk->users; *user; user ++)
         //    qemu_irq_raise(*user);
-    for (i = clk->child1; i; i = i->sibling)
-        jz_clk_rate_update_full(i, rate,
-                        div * i->divisor, mult * i->multiplier);
+        for (i = clk->child1; i; i = i->sibling)
+            jz_clk_rate_update_full(i, rate,
+                                    div * i->divisor, mult * i->multiplier);
 }
 
 static void jz_clk_rate_update(struct clk *clk)
@@ -205,7 +207,8 @@ static void jz_clk_rate_update(struct clk *clk)
     struct clk *i;
     unsigned long int div, mult = div = 1;
 
-    for (i = clk; i->parent; i = i->parent) {
+    for (i = clk; i->parent; i = i->parent)
+    {
         div *= i->divisor;
         mult *= i->multiplier;
     }
@@ -217,18 +220,21 @@ void jz_clk_reparent(struct clk *clk, struct clk *parent)
 {
     struct clk **p;
 
-    if (clk->parent) {
+    if (clk->parent)
+    {
         for (p = &clk->parent->child1; *p != clk; p = &(*p)->sibling);
         *p = clk->sibling;
     }
 
     clk->parent = parent;
-    if (parent) {
+    if (parent)
+    {
         clk->sibling = parent->child1;
         parent->child1 = clk;
         jz_clk_update(clk);
         jz_clk_rate_update(clk);
-    } else
+    }
+    else
         clk->sibling = 0;
 }
 
@@ -258,7 +264,7 @@ int64_t jz_clk_getrate(struct clk *clk)
     return clk->rate;
 }
 
-void jz_clk_init(struct jz_state_s *mpu,uint32_t osc_extal_freq)
+void jz_clk_init(struct jz_state_s *mpu, uint32_t osc_extal_freq)
 {
     struct clk **i, *j, *k;
     int count;
@@ -273,33 +279,36 @@ void jz_clk_init(struct jz_state_s *mpu,uint32_t osc_extal_freq)
     else
         return;
 
-    osc_extal.rate = osc_extal_freq;    
-	
-    for (i = onchip_clks, count = 0; *i; i ++)
+    osc_extal.rate = osc_extal_freq;
+
+    for (i = onchip_clks, count = 0; *i; i++)
         if ((*i)->flags & flag)
-            count ++;
+            count++;
     mpu->clks = (struct clk *) qemu_mallocz(sizeof(struct clk) * (count + 1));
-    for (i = onchip_clks, j = mpu->clks; *i; i ++)
-        if ((*i)->flags & flag) {
+    for (i = onchip_clks, j = mpu->clks; *i; i++)
+        if ((*i)->flags & flag)
+        {
             memcpy(j, *i, sizeof(struct clk));
-            for (k = mpu->clks; k < j; k ++)
-                if (j->parent && !strcmp(j->parent->name, k->name)) {
+            for (k = mpu->clks; k < j; k++)
+                if (j->parent && !strcmp(j->parent->name, k->name))
+                {
                     j->parent = k;
                     j->sibling = k->child1;
                     k->child1 = j;
-                } else if (k->parent && !strcmp(k->parent->name, j->name)) {
+                }
+                else if (k->parent && !strcmp(k->parent->name, j->name))
+                {
                     k->parent = j;
                     k->sibling = j->child1;
                     j->child1 = k;
                 }
-            j->divisor = j->divisor ?: 1;
-            j->multiplier = j->multiplier ?: 1;
-            j ++;
+            j->divisor = j->divisor ? : 1;
+            j->multiplier = j->multiplier ? : 1;
+            j++;
         }
-    for (j = mpu->clks; count --; j ++) {
+    for (j = mpu->clks; count--; j++)
+    {
         jz_clk_update(j);
         jz_clk_rate_update(j);
     }
 }
-
-

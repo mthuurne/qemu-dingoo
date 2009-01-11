@@ -29,22 +29,27 @@
  *
  */
 
-#include "mips_jz.h"
-#include "qemu-common.h"
-#include "sysemu.h"
-#include "arm-misc.h"
-#include "irq.h"
-#include "console.h"
-#include "boards.h"
-#include "i2c.h"
-#include "devices.h"
-#include "flash.h"
 #include "hw.h"
+#include "pc.h"
+#include "fdc.h"
+#include "net.h"
+#include "boards.h"
+#include "smbus.h"
+#include "block.h"
+#include "flash.h"
+#include "mips.h"
+#include "pci.h"
+#include "qemu-char.h"
+#include "sysemu.h"
+#include "audio/audio.h"
+#include "boards.h"
+#include "qemu-log.h"
+#include "mips_jz.h"
 
 
 
 #define PAVO_RAM_SIZE       (0x4000000) /*64M */
-#define PAVO_OSC_EXTAL     (12000000)  /*12MHZ*/
+#define PAVO_OSC_EXTAL     (12000000)   /*12MHZ */
 
 /* pavo board support */
 struct mips_pavo_s
@@ -53,16 +58,11 @@ struct mips_pavo_s
 };
 
 
-
-
-
-
-
-
-    void mips_pavo_init(ram_addr_t ram_size, int vga_ram_size,
-                        const char *boot_device, DisplayState * ds,
-                        const char *kernel_filename, const char *kernel_cmdline,
-                        const char *initrd_filename, const char *cpu_model)
+static void mips_pavo_init(ram_addr_t ram_size, int vga_ram_size,
+                    const char *boot_device, DisplayState * ds,
+                    const char *kernel_filename,
+                    const char *kernel_cmdline,
+                    const char *initrd_filename, const char *cpu_model)
 {
     struct mips_pavo_s *s = (struct mips_pavo_s *) qemu_mallocz(sizeof(*s));
 

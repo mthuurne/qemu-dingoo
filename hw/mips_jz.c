@@ -71,8 +71,12 @@ static void debug_out(uint32_t flag, const char *format, ...)
     }
 }
 #else
-static void debug_init(void) { }
-static void debug_out(uint32_t flag, const char *format, ...){}
+static void debug_init(void)
+{
+}
+static void debug_out(uint32_t flag, const char *format, ...)
+{
+}
 #endif
 
 static uint32_t jz4740_badwidth_read8(void *opaque, target_phys_addr_t addr)
@@ -85,7 +89,7 @@ static uint32_t jz4740_badwidth_read8(void *opaque, target_phys_addr_t addr)
 }
 
 static void jz4740_badwidth_write8(void *opaque, target_phys_addr_t addr,
-                            uint32_t value)
+                                   uint32_t value)
 {
     uint8_t val8 = value;
 
@@ -102,7 +106,7 @@ static uint32_t jz4740_badwidth_read16(void *opaque, target_phys_addr_t addr)
 }
 
 static void jz4740_badwidth_write16(void *opaque, target_phys_addr_t addr,
-                             uint32_t value)
+                                    uint32_t value)
 {
     uint16_t val16 = value;
 
@@ -120,7 +124,7 @@ static uint32_t jz4740_badwidth_read32(void *opaque, target_phys_addr_t addr)
 }
 
 static void jz4740_badwidth_write32(void *opaque, target_phys_addr_t addr,
-                             uint32_t value)
+                                    uint32_t value)
 {
     JZ4740_32B_REG(addr);
     cpu_physical_memory_write(addr, (void *) &value, 4);
@@ -143,7 +147,7 @@ struct jz4740_cpm_s
     uint32_t ssicdr;
 };
 
-static void  jz4740_dump_clocks(jz_clk parent)
+static void jz4740_dump_clocks(jz_clk parent)
 {
     jz_clk i = parent;
 
@@ -461,7 +465,7 @@ static void jz4740_intc_write(void *opaque, target_phys_addr_t addr,
         JZ4740_RO_REG(addr);
         break;
     case 0x4:
-        s->icmr = value ;
+        s->icmr = value;
         break;
     case 0x8:
         s->icmr |= value;
@@ -471,8 +475,8 @@ static void jz4740_intc_write(void *opaque, target_phys_addr_t addr,
         break;
     default:
         cpu_abort(s->soc->env,
-                  "jz4740_intc_write undefined addr " JZ_FMT_plx "  value %x \n",
-                  addr, value);
+                  "jz4740_intc_write undefined addr " JZ_FMT_plx
+                  "  value %x \n", addr, value);
     }
 }
 
@@ -498,20 +502,20 @@ static void jz4740_intc_reset(struct jz4740_intc_s *s)
 
 static void jz4740_set_irq(void *opaque, int irq, int level)
 {
-	struct jz4740_intc_s *s = (struct jz4740_intc_s *) opaque;
-	uint32_t irq_mask = 1<<irq;
-	
-	s->icsr |= irq_mask;
-	s->icpr |= irq_mask;
-	s->icpr &= ~s->icmr;
-	
-	if ((~s->icmr)&irq_mask)
-		qemu_set_irq(s->parent_irq,1);
-	else
-		qemu_set_irq(s->parent_irq,0);
+    struct jz4740_intc_s *s = (struct jz4740_intc_s *) opaque;
+    uint32_t irq_mask = 1 << irq;
+
+    s->icsr |= irq_mask;
+    s->icpr |= irq_mask;
+    s->icpr &= ~s->icmr;
+
+    if (((~s->icmr) & irq_mask) && (level))
+        qemu_set_irq(s->parent_irq, 1);
+    else
+        qemu_set_irq(s->parent_irq, 0);
 }
 
-static qemu_irq *jz4740_intc_init(struct jz_state_s  *soc,qemu_irq parent_irq)
+static qemu_irq *jz4740_intc_init(struct jz_state_s *soc, qemu_irq parent_irq)
 {
     int iomemtype;
     struct jz4740_intc_s *s = (struct jz4740_intc_s *) qemu_mallocz(sizeof(*s));
@@ -534,41 +538,424 @@ struct jz4740_emc_s
     target_phys_addr_t base;
     struct jz_state_s *soc;
 
-    uint32_t smcr1;                    /*0x13010014*/
-    uint32_t smcr2;                    /*0x13010018*/
-    uint32_t smcr3;                    /*0x1301001c*/
-    uint32_t smcr4;                    /*0x13010020*/
-    uint32_t sacr1;                     /*0x13010034*/
-    uint32_t sacr2;                    /*0x13010038*/
-    uint32_t sacr3;                    /*0x1301003c*/
-    uint32_t sacr4;                    /*0x13010040*/
+    uint32_t smcr1;             /*0x13010014 */
+    uint32_t smcr2;             /*0x13010018 */
+    uint32_t smcr3;             /*0x1301001c */
+    uint32_t smcr4;             /*0x13010020 */
+    uint32_t sacr1;             /*0x13010034 */
+    uint32_t sacr2;             /*0x13010038 */
+    uint32_t sacr3;             /*0x1301003c */
+    uint32_t sacr4;             /*0x13010040 */
 
-    uint32_t nfcsr;                    /*0x13010050*/
-    uint32_t nfeccr;                  /*0x13010100*/
-    uint32_t nfecc;                    /*0x13010104*/
-    uint32_t nfpar0;                  /*0x13010108*/
-    uint32_t nfpar1;                  /*0x1301010c*/
-    uint32_t nfpar2;                  /*0x13010110*/
-    uint32_t nfints;                    /*0x13010114*/
-    uint32_t nfinte;                    /*0x13010118*/
-    uint32_t nferr0;                    /*0x1301011c*/
-    uint32_t nferr1;                    /*0x13010120*/
-    uint32_t nferr2;                    /*0x13010124*/
-    uint32_t nferr3;                    /*0x13010128*/
+    uint32_t nfcsr;             /*0x13010050 */
+    uint32_t nfeccr;            /*0x13010100 */
+    uint32_t nfecc;             /*0x13010104 */
+    uint32_t nfpar0;            /*0x13010108 */
+    uint32_t nfpar1;            /*0x1301010c */
+    uint32_t nfpar2;            /*0x13010110 */
+    uint32_t nfints;            /*0x13010114 */
+    uint32_t nfinte;            /*0x13010118 */
+    uint32_t nferr0;            /*0x1301011c */
+    uint32_t nferr1;            /*0x13010120 */
+    uint32_t nferr2;            /*0x13010124 */
+    uint32_t nferr3;            /*0x13010128 */
 
-    uint32_t dmcr;                     /*0x13010080*/
-    uint32_t rtcsr;                      /*0x13010084*/                 
-    uint32_t rtcnt;                      /*0x13010088*/
-    uint32_t rtcor;                     /*0x1301008c*/
-    uint32_t dmar;                     /*0x13010090*/
-    uint32_t sdmr;                     /*0x1301a000*/
-    
+    uint32_t dmcr;              /*0x13010080 */
+    uint32_t rtcsr;             /*0x13010084 */
+    uint32_t rtcnt;             /*0x13010088 */
+    uint32_t rtcor;             /*0x1301008c */
+    uint32_t dmar;              /*0x13010090 */
+    uint32_t sdmr;              /*0x1301a000 */
+
 };
 
-static void jz4740_emc_init(struct jz_state_s  *soc,qemu_irq irq)
+
+static void jz4740_emc_reset(struct jz4740_emc_s *s)
 {
-	
+    s->smcr1 = 0xfff7700;
+    s->smcr2 = 0xfff7700;
+    s->smcr3 = 0xfff7700;
+    s->smcr4 = 0xfff7700;
+    s->sacr1 = 0x18fc;
+    s->sacr2 = 0x16fe;
+    s->sacr3 = 0x14fe;
+    s->sacr4 = 0xcfc;
+
+    s->nfcsr = 0x0;
+    s->nfeccr = 0x0;
+    s->nfecc = 0x0;
+    s->nfpar0 = 0x0;
+    s->nfpar1 = 0x0;
+    s->nfpar2 = 0x0;
+    s->nfints = 0x0;
+    s->nfinte = 0x0;
+    s->nferr0 = 0x0;
+    s->nferr1 = 0x0;
+    s->nferr2 = 0x0;
+    s->nferr3 = 0x0;
+
+    s->dmcr = 0x0;
+    s->rtcsr = 0x0;
+    s->rtcnt = 0x0;
+    s->rtcor = 0x0;
+    s->dmar = 0x20f8;
+    s->sdmr = 0x0;
+
 }
+
+static uint32_t jz4740_emc_read8(void *opaque, target_phys_addr_t addr)
+{
+    struct jz4740_emc_s *s = (struct jz4740_emc_s *) opaque;
+    int offset = addr - s->base;
+    switch (offset)
+    {
+    case 0x108:
+    case 0x109:
+    case 0x10a:
+    case 0x10b:
+        return (s->nfpar0 >> ((offset - 0x108) * 8)) & 0xff;
+    case 0x10c:
+    case 0x10d:
+    case 0x10e:
+    case 0x10f:
+        return (s->nfpar1 >> ((offset - 0x10c) * 8)) & 0xff;
+    case 0x110:
+    case 0x111:
+    case 0x112:
+    case 0x113:
+        return (s->nfpar2 >> ((offset - 0x110) * 8)) & 0xff;
+    case 0xa000:
+    case 0xa001:
+    case 0xa002:
+    case 0xa003:
+        return (s->sdmr >> ((offset - 0xa000) * 8)) & 0xff;
+    default:
+        cpu_abort(s->soc->env,
+                  "jz4740_emc_read8 undefined addr " JZ_FMT_plx " \n", addr);
+
+
+    }
+    return (0);
+}
+
+static uint32_t jz4740_emc_read16(void *opaque, target_phys_addr_t addr)
+{
+    struct jz4740_emc_s *s = (struct jz4740_emc_s *) opaque;
+    int offset = addr - s->base;
+    switch (offset)
+    {
+    case 0x108:
+    case 0x10a:
+        return (s->nfpar0 >> ((offset - 0x108) * 8)) & 0xffff;
+    case 0x10c:
+    case 0x10e:
+        return (s->nfpar1 >> ((offset - 0x10c) * 8)) & 0xffff;
+    case 0x110:
+    case 0x112:
+        return (s->nfpar2 >> ((offset - 0x110) * 8)) & 0xffff;
+    case 0x11c:
+    case 0x11e:
+        return (s->nferr0 >> ((offset - 0x11c) * 8)) & 0xffff;
+    case 0x120:
+    case 0x122:
+        return (s->nferr1 >> ((offset - 0x120) * 8)) & 0xffff;
+    case 0x124:
+    case 0x126:
+        return (s->nferr2 >> ((offset - 0x124) * 8)) & 0xffff;
+    case 0x128:
+    case 0x12a:
+        return (s->nferr3 >> ((offset - 0x128) * 8)) & 0xffff;
+    default:
+        cpu_abort(s->soc->env,
+                  "jz4740_emc_read16 undefined addr " JZ_FMT_plx " \n", addr);
+    }
+    return (0);
+}
+
+static uint32_t jz4740_emc_read32(void *opaque, target_phys_addr_t addr)
+{
+    struct jz4740_emc_s *s = (struct jz4740_emc_s *) opaque;
+    int offset = addr - s->base;
+    switch (offset)
+    {
+    case 0x14:
+        return s->smcr1;
+    case 0x18:
+        return s->smcr2;
+    case 0x1c:
+        return s->smcr3;
+    case 0x20:
+        return s->smcr4;
+    case 0x34:
+        return s->sacr1;
+    case 0x38:
+        return s->sacr2;
+    case 0x3c:
+        return s->sacr3;
+    case 0x40:
+        return s->sacr4;
+    case 0x50:
+        return s->nfcsr;
+    case 0x100:
+        return s->nfeccr;
+    case 0x104:
+        return s->nfecc;
+    case 0x108:
+        return s->nfpar0;
+    case 0x10c:
+        return s->nfpar1;
+    case 0x110:
+        return s->nfpar2;
+    case 0x114:
+        return s->nfints;
+    case 0x118:
+        return s->nfinte;
+    case 0x11c:
+        return s->nferr0;
+    case 0x120:
+        return s->nferr1;
+    case 0x124:
+        return s->nferr2;
+    case 0x128:
+        return s->nferr3;
+    case 0x80:
+        return s->dmcr;
+    case 0x90:
+        return s->dmar;
+    default:
+        cpu_abort(s->soc->env,
+                  "jz4740_emc_read32 undefined addr " JZ_FMT_plx " \n", addr);
+    }
+    return (0);
+}
+
+static void jz4740_emc_write8(void *opaque, target_phys_addr_t addr,
+                              uint32_t value)
+{
+    struct jz4740_emc_s *s = (struct jz4740_emc_s *) opaque;
+    int offset = addr - s->base;
+
+    switch (offset)
+    {
+    case 0x108:
+    case 0x109:
+    case 0x10a:
+    case 0x10b:
+        s->nfpar0 |= (value & 0xff) << ((offset - 0x108) * 8);
+        break;
+    case 0x10c:
+    case 0x10d:
+    case 0x10e:
+    case 0x10f:
+        s->nfpar1 |= (value & 0xff) << ((offset - 0x10c) * 8);
+        break;
+    case 0x110:
+    case 0x111:
+    case 0x112:
+    case 0x113:
+        s->nfpar2 |= (value & 0xff) << ((offset - 0x110) * 8);
+        break;
+    case 0xa000:
+    case 0xa001:
+    case 0xa002:
+    case 0xa003:
+        s->sdmr |= (value & 0xff) << ((offset - 0x110) * 8);
+        break;
+    default:
+        cpu_abort(s->soc->env,
+                  "jz4740_emc_write8 undefined addr " JZ_FMT_plx
+                  "  value %x \n", addr, value);
+    }
+}
+static void jz4740_emc_write16(void *opaque, target_phys_addr_t addr,
+                               uint32_t value)
+{
+    struct jz4740_emc_s *s = (struct jz4740_emc_s *) opaque;
+    int offset = addr - s->base;
+
+    switch (offset)
+    {
+    case 0x108:
+    case 0x10a:
+        s->nfpar0 |= (value & 0xffff) << ((offset - 0x108) * 8);
+        break;
+    case 0x10c:
+    case 0x10e:
+        s->nfpar1 |= (value & 0xffff) << ((offset - 0x10c) * 8);
+        break;
+    case 0x110:
+    case 0x112:
+        s->nfpar2 |= (value & 0xffff) << ((offset - 0x110) * 8);
+        break;
+    case 0x84:
+    case 0x86:
+        s->rtcsr |= (value & 0xffff) << ((offset - 0x84) * 8);
+        break;
+    case 0x88:
+    case 0x8a:
+        s->rtcnt |= (value & 0xffff) << ((offset - 0x88) * 8);
+        break;
+    case 0x8c:
+        s->rtcor |= (value & 0xffff) << ((offset - 0x8c) * 8);
+        break;
+    default:
+        cpu_abort(s->soc->env,
+                  "jz4740_emc_write16 undefined addr " JZ_FMT_plx
+                  "  value %x \n", addr, value);
+    }
+}
+
+static void jz4740_emc_upate_interrupt(struct jz4740_emc_s *s)
+{
+    qemu_set_irq(s->irq, s->nfints & s->nfinte);
+}
+
+static void jz4740_emc_write32(void *opaque, target_phys_addr_t addr,
+                               uint32_t value)
+{
+    struct jz4740_emc_s *s = (struct jz4740_emc_s *) opaque;
+    int offset = addr - s->base;
+
+    switch (offset)
+    {
+    case 0x104:
+    case 0x11c:
+    case 0x120:
+    case 0x124:
+    case 0x128:
+        JZ4740_RO_REG(addr);
+        break;
+    case 0x14:
+        s->smcr1 = value & 0xfff77cf;
+        break;
+    case 0x18:
+        s->smcr2 = value & 0xfff77cf;
+        break;
+    case 0x1c:
+        s->smcr3 = value & 0xfff77cf;
+        break;
+    case 0x20:
+        s->smcr4 = value & 0xfff77cf;
+        break;
+    case 0x34:
+        s->sacr1 = value & 0xffff;
+        break;
+    case 0x38:
+        s->sacr2 = value & 0xffff;
+        break;
+    case 0x3c:
+        s->sacr3 = value & 0xffff;
+        break;
+    case 0x40:
+        s->sacr4 = value & 0xffff;
+        break;
+    case 0x50:
+        s->nfcsr = value & 0xffff;
+        break;
+    case 0x100:
+        s->nfeccr = value & 0x1f;
+        if (s->nfeccr & 0x2)
+        {
+            s->nfecc = 0x0;
+            s->nfpar0 = 0x0;
+            s->nfpar1 = 0x0;
+            s->nfpar2 = 0x0;
+            s->nfints = 0x0;
+            s->nfinte = 0x0;
+            s->nferr0 = 0x0;
+            s->nferr1 = 0x0;
+            s->nferr2 = 0x0;
+            s->nferr3 = 0x0;
+        }
+         /*RS*/
+            /*TODO: Real RS error correction */
+            if (s->nfeccr & 0x4)
+        {
+            if ((s->nfeccr & 0x10) && (!(s->nfeccr & 0x8)))
+            {
+                /*decode */
+                s->nfints = 0x8;
+                s->nferr0 = 0x0;
+                s->nferr1 = 0x0;
+                s->nferr2 = 0x0;
+            }
+            if (s->nfeccr & 0x8)
+            {
+                /*encoding */
+                s->nfints = 0x4;
+                s->nfpar0 = 0xffffffff; /*fake value. for debug */
+                s->nfpar1 = 0xffffffff; /*fake value */
+                s->nfpar2 = 0xff;       /*fake value */
+            }
+        }
+        else
+        {
+            s->nfecc = 0xffffff;
+        }
+        jz4740_emc_upate_interrupt(s);
+        break;
+    case 0x108:
+        s->nfpar0 = value;
+        break;
+    case 0x10c:
+        s->nfpar1 = value;
+        break;
+    case 0x110:
+        s->nfpar2 = value & 0xff;
+        break;
+    case 0x114:
+        s->nfints = value & 0x1fffffff;
+        jz4740_emc_upate_interrupt(s);
+        break;
+    case 0x118:
+        s->nfinte = value & 0x1f;
+        jz4740_emc_upate_interrupt(s);
+        break;
+    case 0x080:
+        s->dmcr = value & 0x9fbeff7f;
+        break;
+    case 0x90:
+        s->dmar = value & 0xffff;
+        break;
+    default:
+        cpu_abort(s->soc->env,
+                  "jz4740_emc_write32 undefined addr " JZ_FMT_plx
+                  "  value %x \n", addr, value);
+
+    }
+
+}
+
+static CPUReadMemoryFunc *jz4740_emc_readfn[] = {
+    jz4740_emc_read8,
+    jz4740_emc_read16,
+    jz4740_emc_read32,
+};
+
+static CPUWriteMemoryFunc *jz4740_emc_writefn[] = {
+    jz4740_emc_write8,
+    jz4740_emc_write16,
+    jz4740_emc_write32,
+};
+
+
+static struct jz4740_emc_s *jz4740_emc_init(struct jz_state_s *soc, qemu_irq irq)
+{
+    int iomemtype;
+    struct jz4740_emc_s *s = (struct jz4740_emc_s *) qemu_mallocz(sizeof(*s));
+    s->base = JZ4740_PHYS_BASE(JZ4740_EMC_BASE);
+    s->soc = soc;
+    s->irq = irq;
+
+    jz4740_emc_reset(s);
+
+    iomemtype =
+        cpu_register_io_memory(0, jz4740_emc_readfn, jz4740_emc_writefn, s);
+    cpu_register_physical_memory(s->base, 0x00010000, iomemtype);
+    return s;
+
+}
+
 
 static void jz4740_cpu_reset(void *opaque)
 {
@@ -576,16 +963,16 @@ static void jz4740_cpu_reset(void *opaque)
 }
 
 struct jz_state_s *jz4740_init(unsigned long sdram_size,
-                                                              uint32_t osc_extal_freq)
+                               uint32_t osc_extal_freq)
 {
     struct jz_state_s *s = (struct jz_state_s *)
         qemu_mallocz(sizeof(struct jz_state_s));
     ram_addr_t sram_base, sdram_base;
-    qemu_irq * intc;
+    qemu_irq *intc;
 
     s->mpu_model = jz4740;
     s->env = cpu_init("jz4740");
-    
+
     if (!s->env)
     {
         fprintf(stderr, "Unable to find CPU definition\n");
@@ -601,7 +988,7 @@ struct jz_state_s *jz4740_init(unsigned long sdram_size,
     /* Clocks */
     jz_clk_init(s, osc_extal_freq);
 
-	/*map sram to 0x80000000 and sdram to 0x80004000 */
+    /*map sram to 0x80000000 and sdram to 0x80004000 */
     sram_base = qemu_ram_alloc(s->sram_size);
     cpu_register_physical_memory(JZ4740_SRAM_BASE, s->sram_size,
                                  (sram_base | IO_MEM_RAM));
@@ -613,13 +1000,13 @@ struct jz_state_s *jz4740_init(unsigned long sdram_size,
     cpu_mips_irq_init_cpu(s->env);
     cpu_mips_clock_init(s->env);
 
-    
+
     /* Clocks */
     jz_clk_init(s, osc_extal_freq);
 
-    intc = jz4740_intc_init(s,s->env->irq[2]);
+    intc = jz4740_intc_init(s, s->env->irq[2]);
     s->cpm = jz4740_cpm_init(s);
+    s->emc = jz4740_emc_init(s,intc[2]);
 
     return s;
 }
-

@@ -102,14 +102,17 @@
 
 
 
-#if TARGET_PHYS_ADDR_BITS == 32
-#define JZ_FMT_plx "%#08x"
-#elif TARGET_PHYS_ADDR_BITS == 64
-#define JZ_FMT_plx "%#08" PRIx64
-#else
-#error TARGET_PHYS_ADDR_BITS undefined
-#endif
+#define JZ_FMT_plx "%#16x"
 
+uint32_t jz4740_badwidth_read8(void *opaque, target_phys_addr_t addr);
+uint32_t jz4740_badwidth_read16(void *opaque, target_phys_addr_t addr);
+uint32_t jz4740_badwidth_read32(void *opaque, target_phys_addr_t addr);
+void jz4740_badwidth_write8(void *opaque, target_phys_addr_t addr,
+                                    uint32_t value);
+void jz4740_badwidth_write16(void *opaque, target_phys_addr_t addr,
+                                    uint32_t value);
+void jz4740_badwidth_write32(void *opaque, target_phys_addr_t addr,
+                                    uint32_t value);
 
 #define IO_ACCESS_VERBOSE			1
 
@@ -159,7 +162,7 @@ struct clk {
     unsigned long rate;		/* Current rate (if .running) */
     unsigned int divisor;	/* Rate relative to input (if .enabled) */
     unsigned int multiplier;	/* Rate relative to input (if .enabled) */
-    int usecount;
+    //int usecount;
 };
 typedef struct clk *jz_clk;
 void jz_clk_init(struct jz_state_s *mpu,uint32_t osc_extal_freq);
@@ -174,7 +177,7 @@ void jz_clk_reparent(jz_clk clk, jz_clk parent);
 
 /*mips_jz.c*/
 struct jz_state_s *jz4740_init(unsigned long sdram_size,
-                                                              uint32_t osc_extal_freq);
+                                                              uint32_t osc_extal_freq,DisplayState * ds);
 
 enum jz_cpu_model {
         jz4740,
@@ -195,7 +198,11 @@ struct jz_state_s {
 
 	struct jz4740_cpm_s *cpm;
 	struct jz4740_emc_s *emc;
-
+	struct jz4740_gpio_s *gpio;
+	struct jz4740_rtc_s *rtc;
+	struct jz4740_tcu_s *tcu;
+	struct jz4740_lcdc_s *lcdc;
+	struct jz4740_dma_s *dma;
 
 };
 

@@ -1,7 +1,7 @@
 /*
  * JZ Soc clocks.
  *
- * Copyright (C) 2006-2008 yajin <yajin@vm-kernel.org>
+ * Copyright (C) 2009 yajin <yajin@vm-kernel.org>
  *
  *
  * This program is free software; you can redistribute it and/or
@@ -33,7 +33,7 @@
 
 
 static struct clk osc_extal = {
-    .name = "osc_extal_12M",
+    .name = "osc_extal",
     .rate = 12000000,
     .flags = ALWAYS_ENABLED | CLOCK_IN_JZ4740,
 };
@@ -151,18 +151,6 @@ struct clk *jz_findclk(struct jz_state_s *cpu, const char *name)
     cpu_abort(cpu->env, "%s: %s not found\n", __FUNCTION__, name);
 }
 
-void jz_clk_get(struct clk *clk)
-{
-    clk->usecount++;
-}
-
-void jz_clk_put(struct clk *clk)
-{
-    if (!(clk->usecount--))
-        cpu_abort(cpu_single_env, "%s: %s is not in use\n",
-                  __FUNCTION__, clk->name);
-}
-
 static void jz_clk_update(struct clk *clk)
 {
     int parent, running;
@@ -175,7 +163,7 @@ static void jz_clk_update(struct clk *clk)
         parent = 1;
 
     running = parent && (clk->enabled ||
-                         ((clk->flags & ALWAYS_ENABLED) && clk->usecount));
+                         ((clk->flags & ALWAYS_ENABLED)));
     if (clk->running != running)
     {
         clk->running = running;
@@ -242,14 +230,6 @@ void jz_clk_onoff(struct clk *clk, int on)
 {
     clk->enabled = on;
     jz_clk_update(clk);
-}
-
-void jz_clk_canidle(struct clk *clk, int can)
-{
-    if (can)
-        jz_clk_put(clk);
-    else
-        jz_clk_get(clk);
 }
 
 void jz_clk_setrate(struct clk *clk, int divide, int multiply)

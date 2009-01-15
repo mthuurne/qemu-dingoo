@@ -51,7 +51,9 @@
 #define DEBUG_TCU                       (1<<0x4)
 #define DEBUG_LCDC                      (1<<0x5)
 #define DEBUG_DMA                      (1<<0x6)
-#define  DEBUG_FLAG                 0//DEBUG_TCU// (DEBUG_CPM|DEBUG_EMC|DEBUG_GPIO  \
+#define  DEBUG_FLAG                  (DEBUG_CPM|DEBUG_EMC|DEBUG_GPIO    \
+															| DEBUG_RTC | DEBUG_TCU | DEBUG_LCDC | DEBUG_DMA)
+														//DEBUG_TCU// (DEBUG_CPM|DEBUG_EMC|DEBUG_GPIO  
 														//	| DEBUG_RTC | DEBUG_TCU | DEBUG_LCDC | DEBUG_DMA)
 
 
@@ -220,6 +222,7 @@ static inline void jz4740_cpccr_update(struct jz4740_cpm_s *s,
     s->cpccr = new_value;
 
     debug_out(DEBUG_CPM, "write to cpccr 0x%x\n", new_value);
+    
     jz4740_dump_clocks(jz_findclk(s->soc, "osc_extal"));
 
 }
@@ -320,7 +323,9 @@ static void jz4740_cpm_write(void *opaque, target_phys_addr_t addr,
                              uint32_t value)
 {
     struct jz4740_cpm_s *s = (struct jz4740_cpm_s *) opaque;
-
+    
+	 debug_out(DEBUG_CPM, "write to cpm addr %x value 0x%x\n", addr,value);
+	
     switch (addr)
     {
     case 0x0:

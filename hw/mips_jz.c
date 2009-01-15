@@ -503,7 +503,8 @@ static void jz4740_intc_write(void *opaque, target_phys_addr_t addr,
         s->icmr &= ~value;
         break;
     case 0x10:
-    	 s->icpr = value;
+    	 s->icpr &= ~value;
+    	 qemu_set_irq(s->parent_irq, 0);
     	 break;
     default:
         cpu_abort(s->soc->env,
@@ -533,19 +534,18 @@ static void jz4740_set_irq(void *opaque, int irq, int level)
     struct jz4740_intc_s *s = (struct jz4740_intc_s *) opaque;
     uint32_t irq_mask = 1 << irq;
 
-	s->icpr &= ~irq_mask;
+	
 	if (level)
     {
     	s->icsr |= irq_mask;
-    	//printf("s->icmr %x \n",s->icmr);
+    	s->icpr &= ~irq_mask;
     	if (!(s->icmr & irq_mask))
     	{
     		s->icpr |= irq_mask;
     		qemu_set_irq(s->parent_irq, 1);
     	}
     }
-    else
-    	qemu_set_irq(s->parent_irq, 0);
+	
 }
 
 static qemu_irq *jz4740_intc_init(struct jz_state_s *soc, qemu_irq parent_irq)
@@ -1588,8 +1588,8 @@ static void jz4740_tcu_update_interrupt(struct jz4740_tcu_s *s)
     {
         qemu_set_irq(s->tcu_irq0, 1);
     }
-   // else
-   //     qemu_set_irq(s->tcu_irq0, 0);
+    else
+        qemu_set_irq(s->tcu_irq0, 0);
 #if 0
     if (((s->tfr & 0x2) & (~(s->tmr & 0x2)))
         || ((s->tfr & 0x20000) & (~(s->tmr & 0x20000))))

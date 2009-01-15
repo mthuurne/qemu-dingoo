@@ -110,23 +110,23 @@ static inline void glue(jz4740_tcu_start_full,
         
 	debug_out(DEBUG_TCU, "s->tsr %d  s->ter %d  s->freq[TCU_INDEX]  %d \n",
        			          s->tsr ,  s->ter ,s->freq[TCU_INDEX]);
-printf("s->tsr %d  s->ter %d  s->freq[TCU_INDEX]  %d \n",
-       			          s->tsr ,  s->ter ,s->freq[TCU_INDEX]);
+//printf("s->tsr %d  s->ter %d  s->freq[TCU_INDEX]  %d \n",
+   //    			          s->tsr ,  s->ter ,s->freq[TCU_INDEX]);
     if ((!(s->tsr & (1 << TCU_INDEX))) && (s->ter & (1 << TCU_INDEX))
         && (s->freq[TCU_INDEX] != 0))
     {
         glue(jz4740_tcu_time_sync, TCU_INDEX) (s);
-        printf("tdfr %x \n",s->tdfr[TCU_INDEX] );
+        //printf("tdfr %x \n",s->tdfr[TCU_INDEX] );
         /*calculate next fire time */
         count =
             (s->tdfr[TCU_INDEX] - s->tcnt[TCU_INDEX]) * s->prescale[TCU_INDEX];
-        printf("tdfr11 %x count %lld\n",s->tdfr[TCU_INDEX],count );
+        //printf("tdfr11 %x count %lld\n",s->tdfr[TCU_INDEX],count );
         next += muldiv64(count, ticks_per_sec, s->freq[TCU_INDEX]);
         qemu_mod_timer(s->full_timer[TCU_INDEX], next);
                 debug_out(DEBUG_TCU, "s->tdfr[TCU_INDEX]  %d  s->tcnt[TCU_INDEX] %d  next  %lld \n",
        			          s->tdfr[TCU_INDEX] ,  s->tcnt[TCU_INDEX]  ,next);
-			printf("s->tdfr[TCU_INDEX]22  %x  s->tcnt[TCU_INDEX] %x next  %lld \n",
-       			          s->tdfr[TCU_INDEX] ,  s->tcnt[TCU_INDEX]  ,next);
+			//printf("s->tdfr[TCU_INDEX]22  %x  s->tcnt[TCU_INDEX] %x next  %lld \n",
+       	//		          s->tdfr[TCU_INDEX] ,  s->tcnt[TCU_INDEX]  ,next);
 
     }
     else
@@ -221,8 +221,8 @@ static void glue(jz4740_tcu_write, TCU_INDEX) (void *opaque,
 
     debug_out(DEBUG_TCU, "jz4740_tcu_write%x addr %x value %x \n", TCU_INDEX,
               addr, value);
-printf( "jz4740_tcu_write%x addr %x value %x \n", TCU_INDEX,
-              addr, value);
+//printf( "jz4740_tcu_write%x addr %x value %x \n", TCU_INDEX,
+//              addr, value);
     addr -= 0x40 + TCU_INDEX * 0x10;
 
     switch (addr)
@@ -231,7 +231,7 @@ printf( "jz4740_tcu_write%x addr %x value %x \n", TCU_INDEX,
          /*TDFR*/ 
          
          s->tdfr[TCU_INDEX] = value & 0xffff;
-         printf("s->tdfr[TCU_INDEX]  %x \n",s->tdfr[TCU_INDEX] );
+         //printf("s->tdfr[TCU_INDEX]  %x \n",s->tdfr[TCU_INDEX] );
         glue(jz4740_tcu_start_full, TCU_INDEX) (s);
         break;
     case 0x4:
@@ -263,7 +263,6 @@ printf( "jz4740_tcu_write%x addr %x value %x \n", TCU_INDEX,
             break;
         }
         s->prescale[TCU_INDEX] = 1 << (((value & 0x38) >> 3) * 2);
-        printf("s->prescale[TCU_INDEX]  %x\n",s->prescale[TCU_INDEX] );
         glue(jz4740_tcu_start_half, TCU_INDEX) (s);
         glue(jz4740_tcu_start_full, TCU_INDEX) (s);
         break;

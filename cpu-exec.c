@@ -447,16 +447,6 @@ int cpu_exec(CPUState *env1)
                         next_tb = 0;
                     }
 #elif defined(TARGET_MIPS)
-if (interrupt_request & CPU_INTERRUPT_HARD)
-{
-if (env->CP0_Cause&0x400)
-{
-	printf("HARD INT \n");
-	printf("env->CP0_Status %x env->CP0_Cause %x CP0Ca_IP_mask %x \n",env->CP0_Status,env->CP0_Cause,CP0Ca_IP_mask);
-	printf("CP0St_IE %x CP0St_EXL %x CP0St_ERL %x \n",CP0St_IE,CP0St_EXL,CP0St_ERL);
-	printf("env->hflags %x MIPS_HFLAG_DM %x \n",env->hflags ,MIPS_HFLAG_DM);
-}
-}
                     if ((interrupt_request & CPU_INTERRUPT_HARD) &&
                         (env->CP0_Status & env->CP0_Cause & CP0Ca_IP_mask) &&
                         (env->CP0_Status & (1 << CP0St_IE)) &&

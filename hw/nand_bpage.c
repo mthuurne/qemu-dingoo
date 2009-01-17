@@ -46,7 +46,7 @@ struct nand_flash_info_s
 struct nand_flash_info_s nand_flash_info[2] =
 {
     {0x2c, 0xba, 256,2, 11, 6, 6},
-    {0Xec, 0xd3, 128,1, 11, 6, 6}
+    {0Xec, 0xd3, 1024,1, 11, 6, 6}
 };
 
 

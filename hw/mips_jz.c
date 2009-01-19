@@ -51,7 +51,8 @@
 #define DEBUG_TCU                       (1<<0x4)
 #define DEBUG_LCDC                      (1<<0x5)
 #define DEBUG_DMA                      (1<<0x6)
-#define  DEBUG_FLAG                 DEBUG_RTC //(DEBUG_CPM|DEBUG_EMC|DEBUG_GPIO    \
+#define DEBUG_SADC                      (1<<0x7)
+#define  DEBUG_FLAG                 DEBUG_SADC //(DEBUG_CPM|DEBUG_EMC|DEBUG_GPIO    \
 														 //	| DEBUG_RTC | DEBUG_TCU | DEBUG_LCDC | DEBUG_DMA)
                                                                                                                 //DEBUG_TCU// (DEBUG_CPM|DEBUG_EMC|DEBUG_GPIO  
                                                                                                                 //      | DEBUG_RTC | DEBUG_TCU | DEBUG_LCDC | DEBUG_DMA)
@@ -1617,7 +1618,7 @@ static void jz4740_tcu_update_interrupt(struct jz4740_tcu_s *s)
     }
     else
         qemu_set_irq(s->tcu_irq0, 0);
-#if 0
+
     if (((s->tfr & 0x2) & (~(s->tmr & 0x2)))
         || ((s->tfr & 0x20000) & (~(s->tmr & 0x20000))))
     {
@@ -1633,7 +1634,7 @@ static void jz4740_tcu_update_interrupt(struct jz4740_tcu_s *s)
     }
     else
         qemu_set_irq(s->tcu_irq2, 0);
-#endif
+
 }
 
 #undef TCU_INDEX
@@ -1727,7 +1728,6 @@ static void jz4740_tcu_if_write32(void *opaque, target_phys_addr_t addr,
     debug_out(DEBUG_TCU, "jz4740_tcu_if_write32 addr %x value %x\n", addr,
               value);
 
-    fprintf(fp, "jz4740_tcu_if_write32 addr %x value %x\n", addr, value);
     switch (addr)
     {
     case 0x2c:
@@ -2661,6 +2661,263 @@ static struct jz4740_dma_s *jz4740_dma_init(struct jz_state_s *soc,
 
 }
 
+#define PEN_DOWN 1
+#define PEN_UP       0
+struct jz4740_sadc_s
+{
+    qemu_irq irq;
+
+    target_phys_addr_t base;
+    struct jz_state_s *soc;
+
+    uint32_t adena;
+    uint32_t adcfg;
+    uint32_t adctrl;
+    uint32_t adstate;
+    uint32_t adsame;
+    uint32_t adwait;
+    uint32_t adtch;
+    uint32_t adbdat;
+    uint32_t adsdat;
+    uint32_t addpin;
+
+	uint8_t tchen;
+    uint8_t ex_in;
+    uint8_t xyz;
+    uint8_t snum;
+
+    uint16_t x;
+    uint16_t y;
+
+    uint16_t pen_state;
+    uint8_t read_index;
+    
+    
+};
+
+static void jz4740_touchscreen_interrupt(struct jz4740_sadc_s *s)
+{
+    if (!s->tchen)
+    	return;
+
+    if ((s->adctrl)&(s->adstate))
+    {
+    	debug_out(DEBUG_SADC,"irq s->adctrl %x s->adstate %x \n",s->adctrl,s->adstate);
+    	qemu_set_irq(s->irq,1);
+    }
+    	
+}
+
+static void jz4740_touchscreen_event(void *opaque,
+                int x, int y, int z, int buttons_state)
+{
+    struct jz4740_sadc_s *s = opaque;
+
+    if (!s->tchen)
+    	return;
+
+    s->x = (x*4096)/0x7FFF;
+    s->y = (y*4096)/0x7FFF;
+
+	if ((s->pen_state == PEN_UP)&&(buttons_state==PEN_DOWN))
+	{
+		 s->adstate |= 0x14;
+		jz4740_touchscreen_interrupt(s);
+	}
+	else if ((s->pen_state == PEN_DOWN)&&(buttons_state==PEN_UP))
+	{
+		s->adstate |= 0xc;
+	   jz4740_touchscreen_interrupt(s);
+	}
+	s->pen_state = buttons_state;
+	
+}
+
+static uint32_t jz4740_sadc_read8(void *opaque, target_phys_addr_t addr)
+{
+    struct jz4740_sadc_s *s = (struct jz4740_sadc_s *) opaque;
+
+    switch (addr)
+    {
+    	case 0x0:
+    		return s->adena;
+    	case 0x8:
+    		return s->adctrl;
+    	case 0xc:
+    		return s->adstate;
+    default:
+        cpu_abort(s->soc->env,
+                  "jz4740_sadc_read8 undefined addr " JZ_FMT_plx "  \n", addr);
+    }
+    return (0);
+}
+
+static uint32_t jz4740_sdac_read16(void *opaque, target_phys_addr_t addr)
+{
+    struct jz4740_sadc_s *s = (struct jz4740_sadc_s *) opaque;
+    
+    switch (addr)
+    {
+    	case 0x10:
+    		return s->adsame;
+    	case 0x14:
+    		return s->adwait;
+    	case 0x1c:
+    		return s->adbdat;
+    	case 0x20:
+    		return s->adsdat;
+    	default:
+        cpu_abort(s->soc->env,
+                  "jz4740_sdac_read16 undefined addr " JZ_FMT_plx "  \n", addr);
+    }
+    return (0);
+}
+
+static uint32_t jz4740_sdac_read32(void *opaque, target_phys_addr_t addr)
+{
+    struct jz4740_sadc_s *s = (struct jz4740_sadc_s *) opaque;
+    switch (addr)
+    {
+    	case 0x4:
+    		return s->adcfg;
+    	case 0x18:
+    		/*TODO: Other type format*/
+    		if (s->read_index==0)
+    		{
+    			s->read_index ++;
+    			return (((s->x) & 0x7fff) | ((s->y & 0x7ffff) << 16));
+    		}
+    		else
+    		{
+    			s->read_index = 0;
+    			return (0x3fff);
+    		}
+    	default:
+        cpu_abort(s->soc->env,
+                  "jz4740_sdac_read32 undefined addr " JZ_FMT_plx "  \n", addr);
+    }
+    return (0);
+}
+
+static void jz4740_sadc_write8(void *opaque, target_phys_addr_t addr,
+                             uint32_t value)
+{
+    struct jz4740_sadc_s *s = (struct jz4740_sadc_s *) opaque;
+
+    debug_out(DEBUG_SADC, "jz4740_sadc_write8 addr %x value %x\n", addr, value);
+
+    switch (addr)
+    {
+    	case 0x0:
+    		s->adena = value & 0x7;
+    		s->tchen = value & 0x4;
+    		break;
+    	case 0x8:
+    		s->adctrl = value & 0x1f;
+    		break;
+    	case 0xc:
+    		s->adstate &= ~(value & 0x1f);
+    		break;
+    	default:
+        cpu_abort(s->soc->env,
+                  "jz4740_sadc_write8 undefined addr " JZ_FMT_plx "  value %x \n", addr,value);
+    }
+}
+
+static void jz4740_sadc_write16(void *opaque, target_phys_addr_t addr,
+                             uint32_t value)
+{
+    struct jz4740_sadc_s *s = (struct jz4740_sadc_s *) opaque;
+
+    debug_out(DEBUG_SADC, "jz4740_sadc_write16 addr %x value %x\n", addr, value);
+
+    switch (addr)
+    {
+    	case 0x10:
+    		s->adsame = value & 0xffff;
+    		break;
+    	case 0x14:
+    		s->adsdat = value & 0xffff;
+    		break;
+    	case 0x1c:
+    		s->adbdat = 0x0;
+    	case 0x20:
+    		s->adsdat = 0x0;
+    	default:
+          cpu_abort(s->soc->env,
+                  "jz4740_sadc_write16 undefined addr " JZ_FMT_plx "  value %x \n", addr,value);
+    }
+}
+
+static void jz4740_sadc_write32(void *opaque, target_phys_addr_t addr,
+                             uint32_t value)
+{
+    struct jz4740_sadc_s *s = (struct jz4740_sadc_s *) opaque;
+
+
+    debug_out(DEBUG_SADC, "jz4740_sadc_write32 addr %x value %x\n", addr, value);
+
+    switch (addr)
+    {
+    	case 0x4:
+    		s->adcfg = value & 0xc007ffff;
+    		s->ex_in = (value & 0x40000000)>>30;
+    		s->xyz = (value & 0x6fff)>>13;
+    		s->snum = ((value & 0x1cff)>>10)+1;
+    		break;
+    	case 18:
+    		s->adtch = value & 0x8fff8fff;
+    		break;
+    	default:
+          cpu_abort(s->soc->env,
+                  "jz4740_sadc_write32 undefined addr " JZ_FMT_plx "  value %x \n", addr,value);
+    }
+}
+
+static void jz4740_sadc_reset(struct jz4740_sadc_s *s)
+{
+	s->adcfg = 0x0002002c;
+	s->tchen = 0;
+	s->snum = 1;
+	s->xyz = 0;
+	s->ex_in = 0;
+}
+
+static CPUReadMemoryFunc *jz4740_sadc_readfn[] = {
+    jz4740_sadc_read8, 
+    jz4740_sdac_read16, 
+    jz4740_sdac_read32,
+};
+
+static CPUWriteMemoryFunc *jz4740_sadc_writefn[] = {
+    jz4740_sadc_write8, 
+    jz4740_sadc_write16, 
+    jz4740_sadc_write32,
+};
+
+static struct jz4740_sadc_s *jz4740_sadc_init(struct jz_state_s *soc,
+                                            qemu_irq irq)
+{   
+	int iomemtype;
+	struct jz4740_sadc_s *s;
+
+    s = (struct jz4740_sadc_s *)
+            qemu_mallocz(sizeof(struct jz4740_sadc_s));
+    s->base = JZ4740_PHYS_BASE(JZ4740_SADC_BASE);
+    s->irq = irq;
+    s->soc = soc;
+
+	qemu_add_mouse_event_handler(jz4740_touchscreen_event, s, 1,
+    									       "QEMU JZ4740 Touchscreen");
+
+    jz4740_sadc_reset(s);
+
+    iomemtype =
+        cpu_register_io_memory(0, jz4740_sadc_readfn, jz4740_sadc_writefn, s);
+    cpu_register_physical_memory(s->base, 0x00001000, iomemtype);
+    return s;
+}
+
 static void jz4740_cpu_reset(void *opaque)
 {
     fprintf(stderr, "%s: UNIMPLEMENTED!", __FUNCTION__);
@@ -2716,6 +2973,7 @@ struct jz_state_s *jz4740_init(unsigned long sdram_size,
     jz4740_tcu_init(s, s->tcu, 0);
     s->lcdc = jz4740_lcdc_init(s, intc[30], ds);
     s->dma = jz4740_dma_init(s, intc[20]);
+    s->sadc = jz4740_sadc_init(s,intc[12]);
 
     if (serial_hds[0])
         serial_mm_init(0x10030000, 2, intc[9], 57600, serial_hds[0], 1);

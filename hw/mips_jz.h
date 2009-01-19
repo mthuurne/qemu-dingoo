@@ -203,6 +203,7 @@ struct jz_state_s {
 	struct jz4740_tcu_s *tcu;
 	struct jz4740_lcdc_s *lcdc;
 	struct jz4740_dma_s *dma;
+	struct jz4740_sadc_s *sadc;
 
 };
 

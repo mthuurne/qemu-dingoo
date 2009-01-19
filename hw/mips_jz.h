@@ -102,7 +102,7 @@
 
 
 
-#define JZ_FMT_plx "%#16x"
+#define JZ_FMT_plx "%#16llx"
 
 uint32_t jz4740_badwidth_read8(void *opaque, target_phys_addr_t addr);
 uint32_t jz4740_badwidth_read16(void *opaque, target_phys_addr_t addr);

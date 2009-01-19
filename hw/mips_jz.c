@@ -2275,7 +2275,7 @@ static inline void jz4740_dma_transfer(struct jz4740_dma_s *s,
     pd_src = cpu_get_physical_page_desc(src);
     if ((pd_src & ~TARGET_PAGE_MASK) != IO_MEM_RAM)
         /* TODO */
-        cpu_abort(cpu_single_env, "%s: DMA source address %x outside RAM!\n",
+        cpu_abort(cpu_single_env, "%s: DMA source address "JZ_FMT_plx" outside RAM!\n",
                   __FUNCTION__, src);
     else
         sr = phys_ram_base +
@@ -2285,7 +2285,7 @@ static inline void jz4740_dma_transfer(struct jz4740_dma_s *s,
     if ((pd_dest & ~TARGET_PAGE_MASK) != IO_MEM_RAM)
         /* TODO */
         cpu_abort(cpu_single_env,
-                  "%s: DMA destination address %x outside RAM!\n",
+                  "%s: DMA destination address "JZ_FMT_plx" outside RAM!\n",
                   __FUNCTION__, dest);
     else
         de = phys_ram_base +
@@ -2362,8 +2362,8 @@ static inline void jz4740_dma_drun(struct jz4740_dma_s *s, int channel)
 
     if (!desc)
         cpu_abort(cpu_single_env,
-                  "%s: DMA descriptor " JZ_FMT_plx " is NULL!\n", __FUNCTION__,
-                  (uint32_t) desc);
+                  "%s: DMA descriptor %x is NULL!\n", __FUNCTION__,
+                  (uint32_t)desc);
 
     while (1)
     {
@@ -2398,7 +2398,7 @@ static inline void jz4740_dma_drun(struct jz4740_dma_s *s, int channel)
             pd = cpu_get_physical_page_desc(desc_phy);
             if ((pd & ~TARGET_PAGE_MASK) != IO_MEM_RAM)
                 cpu_abort(cpu_single_env,
-                          "%s: DMA descriptor address %x outside RAM!\n",
+                          "%s: DMA descriptor address "JZ_FMT_plx" outside RAM!\n",
                           __FUNCTION__, desc_phy);
             else
                 desc = (struct jz4740_desc_s *) (phys_ram_base +

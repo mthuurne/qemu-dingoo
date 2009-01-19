@@ -52,7 +52,7 @@
 #define DEBUG_LCDC                      (1<<0x5)
 #define DEBUG_DMA                      (1<<0x6)
 #define DEBUG_SADC                      (1<<0x7)
-#define  DEBUG_FLAG                 DEBUG_SADC //(DEBUG_CPM|DEBUG_EMC|DEBUG_GPIO    \
+#define  DEBUG_FLAG                 0 //(DEBUG_CPM|DEBUG_EMC|DEBUG_GPIO    
 														 //	| DEBUG_RTC | DEBUG_TCU | DEBUG_LCDC | DEBUG_DMA)
                                                                                                                 //DEBUG_TCU// (DEBUG_CPM|DEBUG_EMC|DEBUG_GPIO  
                                                                                                                 //      | DEBUG_RTC | DEBUG_TCU | DEBUG_LCDC | DEBUG_DMA)
@@ -1380,7 +1380,7 @@ struct jz4740_rtc_s
     struct jz_state_s *soc;
 
     QEMUTimer *hz_tm;
-    //struct tm tm;
+    struct tm tm;
     //int sec_offset;
     int64_t next;
 
@@ -1401,11 +1401,17 @@ struct jz4740_rtc_s
 
 static void jz4740_rtc_update_interrupt(struct jz4740_rtc_s *s)
 {
-   /* if (((s->rtcsr & 0x40) && (s->rtcsr & 0x20))
-        || ((s->rtcsr & 0x10) && (s->rtcsr & 0x8)))
-        qemu_set_irq(s->irq, 1);*/
-    //else
-    //    qemu_set_irq(s->irq, 0);
+	if (!s->rtcsr&0x1)
+		return;
+	
+    if (((s->rtccr & 0x40) && (s->rtccr & 0x20))
+        || ((s->rtccr & 0x10) && (s->rtccr & 0x8)))
+    {
+    	debug_out(DEBUG_RTC,"s->rtccr %x \n",s->rtcsr);
+    	qemu_set_irq(s->irq, 1);
+    }
+        
+
 }
 
 static inline void jz4740_rtc_start(struct jz4740_rtc_s *s)
@@ -1443,14 +1449,12 @@ static void jz4740_rtc_hz(void *opaque)
 
 static void jz4740_rtc_reset(struct jz4740_rtc_s *s)
 {
+	
     s->rtccr = 0x81;
-
     s->next = 1000;
 
     /*Maybe rtcsr need to be saved to file */
-    s->rtcsr = 0;
-    //s->sec_offset = 0;
-    //qemu_get_timedate(&s->tm, s->sec_offset);
+    s->rtcsr = time(NULL);
     jz4740_rtc_start(s);
 
 }
@@ -1500,22 +1504,20 @@ static void jz4740_rtc_write(void *opaque, target_phys_addr_t addr,
     switch (addr)
     {
     case 0x0:
-        s->rtccr = value & 0x2d;
+        s->rtccr = value & 0x7d;
         if (!value & 0x40)
             s->rtccr &= ~0x40;
         if (!value & 0x10)
             s->rtccr &= ~0x10;
         if (s->rtccr & 0x1)
         {
-            //jz4740_rtc_start(s);
-            jz4740_rtc_update_interrupt(s);
+            jz4740_rtc_start(s);
         }
         else
         	jz4740_rtc_stop(s);
         break;
     case 0x4:
         s->rtcsr = value;
-        //s->sec_offset = qemu_timedate_diff(&s->tm);
         break;
     case 0x8:
         s->rtcsar = value;

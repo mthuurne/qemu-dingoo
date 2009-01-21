@@ -323,7 +323,7 @@ static void jz4740_cpm_write(void *opaque, target_phys_addr_t addr,
 {
     struct jz4740_cpm_s *s = (struct jz4740_cpm_s *) opaque;
 
-    debug_out(DEBUG_CPM, "write to cpm addr %x value 0x%x\n", addr, value);
+    debug_out(DEBUG_CPM, "write to cpm addr "JZ_FMT_plx" value 0x%x\n", addr, value);
 
     switch (addr)
     {
@@ -782,7 +782,7 @@ static void jz4740_emc_write8(void *opaque, target_phys_addr_t addr,
 {
     struct jz4740_emc_s *s = (struct jz4740_emc_s *) opaque;
 
-    debug_out(DEBUG_EMC, "jz4740_emc_write8 addr %x value %x\n", addr, value);
+    debug_out(DEBUG_EMC, "jz4740_emc_write8 addr "JZ_FMT_plx"  value %x\n", addr, value);
 
     switch (addr)
     {
@@ -817,7 +817,7 @@ static void jz4740_emc_write16(void *opaque, target_phys_addr_t addr,
 {
     struct jz4740_emc_s *s = (struct jz4740_emc_s *) opaque;
 
-    debug_out(DEBUG_EMC, "jz4740_emc_write16 addr %x value %x\n", addr, value);
+    debug_out(DEBUG_EMC, "jz4740_emc_write16 addr "JZ_FMT_plx"  value %x\n", addr, value);
     switch (addr)
     {
     case 0x108:
@@ -860,7 +860,7 @@ static void jz4740_emc_write32(void *opaque, target_phys_addr_t addr,
 {
     struct jz4740_emc_s *s = (struct jz4740_emc_s *) opaque;
 
-    debug_out(DEBUG_EMC, "jz4740_emc_write32 addr %x value %x\n", addr, value);
+    debug_out(DEBUG_EMC, "jz4740_emc_write32 addr "JZ_FMT_plx" value %x\n", addr, value);
     switch (addr)
     {
     case 0x104:
@@ -1183,7 +1183,7 @@ static void jz4740_gpio_write(void *opaque, target_phys_addr_t addr,
     struct jz4740_gpio_s *s = (struct jz4740_gpio_s *) opaque;
     uint32_t group;
 
-    debug_out(DEBUG_GPIO, "jz4740_gpio_write addr %x value %x\n", addr, value);
+    debug_out(DEBUG_GPIO, "jz4740_gpio_write addr "JZ_FMT_plx"  value %x\n", addr, value);
 
     switch (addr)
     {
@@ -1497,7 +1497,7 @@ static void jz4740_rtc_write(void *opaque, target_phys_addr_t addr,
 {
     struct jz4740_rtc_s *s = (struct jz4740_rtc_s *) opaque;
 
-    debug_out(DEBUG_RTC, "jz4740_rtc_write addr %x value %x\n", addr, value);
+    debug_out(DEBUG_RTC, "jz4740_rtc_write addr "JZ_FMT_plx" value %x\n", addr, value);
 
     switch (addr)
     {
@@ -1999,7 +1999,7 @@ static void jz4740_lcdc_write(void *opaque, target_phys_addr_t addr,
 {
     struct jz4740_lcdc_s *s = (struct jz4740_lcdc_s *) opaque;
 
-    debug_out(DEBUG_LCDC, "jz4740_lcdc_write addr %x value %x\n", addr, value);
+    debug_out(DEBUG_LCDC, "jz4740_lcdc_write addr "JZ_FMT_plx" value %x\n", addr, value);
 
     switch (addr)
     {
@@ -2531,7 +2531,7 @@ static void jz4740_dma_write(void *opaque, target_phys_addr_t addr,
     struct jz4740_dma_s *s = (struct jz4740_dma_s *) opaque;
     int channel;
 
-    debug_out(DEBUG_DMA, "jz4740_dma_write addr %x value %x \n", addr, value);
+    debug_out(DEBUG_DMA, "jz4740_dma_write addr "JZ_FMT_plx"  value %x \n", addr, value);
     switch (addr)
     {
     case 0x304:
@@ -2804,7 +2804,7 @@ static void jz4740_sadc_write8(void *opaque, target_phys_addr_t addr,
 {
     struct jz4740_sadc_s *s = (struct jz4740_sadc_s *) opaque;
 
-    debug_out(DEBUG_SADC, "jz4740_sadc_write8 addr %x value %x\n", addr, value);
+    debug_out(DEBUG_SADC, "jz4740_sadc_write8 addr "JZ_FMT_plx" value %x\n", addr, value);
 
     switch (addr)
     {
@@ -2829,7 +2829,7 @@ static void jz4740_sadc_write16(void *opaque, target_phys_addr_t addr,
 {
     struct jz4740_sadc_s *s = (struct jz4740_sadc_s *) opaque;
 
-    debug_out(DEBUG_SADC, "jz4740_sadc_write16 addr %x value %x\n", addr, value);
+    debug_out(DEBUG_SADC, "jz4740_sadc_write16 addr "JZ_FMT_plx"  value %x\n", addr, value);
 
     switch (addr)
     {
@@ -2855,7 +2855,7 @@ static void jz4740_sadc_write32(void *opaque, target_phys_addr_t addr,
     struct jz4740_sadc_s *s = (struct jz4740_sadc_s *) opaque;
 
 
-    debug_out(DEBUG_SADC, "jz4740_sadc_write32 addr %x value %x\n", addr, value);
+    debug_out(DEBUG_SADC, "jz4740_sadc_write32 addr "JZ_FMT_plx"  value %x\n", addr, value);
 
     switch (addr)
     {

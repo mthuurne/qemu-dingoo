@@ -52,10 +52,8 @@
 #define DEBUG_LCDC                      (1<<0x5)
 #define DEBUG_DMA                      (1<<0x6)
 #define DEBUG_SADC                      (1<<0x7)
-#define  DEBUG_FLAG                 0 //(DEBUG_CPM|DEBUG_EMC|DEBUG_GPIO    
-														 //	| DEBUG_RTC | DEBUG_TCU | DEBUG_LCDC | DEBUG_DMA)
-                                                                                                                //DEBUG_TCU// (DEBUG_CPM|DEBUG_EMC|DEBUG_GPIO  
-                                                                                                                //      | DEBUG_RTC | DEBUG_TCU | DEBUG_LCDC | DEBUG_DMA)
+#define DEBUG_ALL                         (0xffffffff)
+#define  DEBUG_FLAG                    DEBUG_ALL
 
 
 #ifdef DEBUG

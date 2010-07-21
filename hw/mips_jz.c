@@ -31,6 +31,7 @@
 
 #include "hw.h"
 #include "mips.h"
+#include "mips_cpudevs.h"
 #include "sysemu.h"
 #include "qemu-timer.h"
 #include "qemu-char.h"
@@ -323,7 +324,7 @@ static void jz4740_cpm_write(void *opaque, target_phys_addr_t addr,
 {
     struct jz4740_cpm_s *s = (struct jz4740_cpm_s *) opaque;
 
-    debug_out(DEBUG_CPM, "write to cpm addr "JZ_FMT_plx" value 0x%x\n", addr, value);
+    debug_out(DEBUG_CPM, "write to cpm addr " TARGET_FMT_plx " value 0x%x\n", addr, value);
 
     switch (addr)
     {
@@ -362,7 +363,7 @@ static void jz4740_cpm_write(void *opaque, target_phys_addr_t addr,
         break;
     default:
         cpu_abort(s->soc->env,
-                  "jz4740_cpm_write undefined addr " JZ_FMT_plx
+                  "jz4740_cpm_write undefined addr " TARGET_FMT_plx
                   "  value %x \n", addr, value);
     }
 
@@ -399,7 +400,7 @@ static uint32_t jz474_cpm_read(void *opaque, target_phys_addr_t addr)
         return s->ssicdr;
     default:
         cpu_abort(s->soc->env,
-                  "jz474_cpm_read undefined addr " JZ_FMT_plx "  \n", addr);
+                  "jz474_cpm_read undefined addr " TARGET_FMT_plx "  \n", addr);
     }
 
 }
@@ -407,14 +408,14 @@ static uint32_t jz474_cpm_read(void *opaque, target_phys_addr_t addr)
 
 
 static CPUReadMemoryFunc *jz4740_cpm_readfn[] = {
-    jz4740_badwidth_read32, 
-    jz4740_badwidth_read32, 
+    jz4740_badwidth_read32,
+    jz4740_badwidth_read32,
     jz474_cpm_read,
 };
 
 static CPUWriteMemoryFunc *jz4740_cpm_writefn[] = {
-    jz4740_badwidth_write32, 
-    jz4740_badwidth_write32, 
+    jz4740_badwidth_write32,
+    jz4740_badwidth_write32,
     jz4740_cpm_write,
 };
 
@@ -444,7 +445,7 @@ static struct jz4740_cpm_s *jz4740_cpm_init(struct jz_state_s *soc)
     jz4740_cpm_reset(s);
 
     iomemtype =
-        cpu_register_io_memory(0, jz4740_cpm_readfn, jz4740_cpm_writefn, s);
+        cpu_register_io_memory(jz4740_cpm_readfn, jz4740_cpm_writefn, s);
     cpu_register_physical_memory(s->base, 0x00001000, iomemtype);
     return s;
 }
@@ -485,7 +486,7 @@ static uint32_t jz4740_intc_read(void *opaque, target_phys_addr_t addr)
         return s->icpr;
     default:
         cpu_abort(s->soc->env,
-                  "jz4740_intc_read undefined addr " JZ_FMT_plx "  \n", addr);
+                  "jz4740_intc_read undefined addr " TARGET_FMT_plx "  \n", addr);
 
     }
     return (0);
@@ -516,21 +517,21 @@ static void jz4740_intc_write(void *opaque, target_phys_addr_t addr,
         break;
     default:
         cpu_abort(s->soc->env,
-                  "jz4740_intc_write undefined addr " JZ_FMT_plx
+                  "jz4740_intc_write undefined addr " TARGET_FMT_plx
                   "  value %x \n", addr, value);
     }
 }
 
 
 static CPUReadMemoryFunc *jz4740_intc_readfn[] = {
-    jz4740_badwidth_read32, 
-    jz4740_badwidth_read32, 
+    jz4740_badwidth_read32,
+    jz4740_badwidth_read32,
     jz4740_intc_read,
 };
 
 static CPUWriteMemoryFunc *jz4740_intc_writefn[] = {
-    jz4740_badwidth_write32, 
-    jz4740_badwidth_write32, 
+    jz4740_badwidth_write32,
+    jz4740_badwidth_write32,
     jz4740_intc_write,
 };
 
@@ -571,7 +572,7 @@ static qemu_irq *jz4740_intc_init(struct jz_state_s *soc, qemu_irq parent_irq)
     jz4740_intc_reset(s);
 
     iomemtype =
-        cpu_register_io_memory(0, jz4740_intc_readfn, jz4740_intc_writefn, s);
+        cpu_register_io_memory(jz4740_intc_readfn, jz4740_intc_writefn, s);
     cpu_register_physical_memory(s->base, 0x00001000, iomemtype);
     return qemu_allocate_irqs(jz4740_set_irq, s, 32);
 }
@@ -677,7 +678,7 @@ static uint32_t jz4740_emc_read8(void *opaque, target_phys_addr_t addr)
         return (s->sdmr >> ((addr - 0xa000) * 8)) & 0xff;
     default:
         cpu_abort(s->soc->env,
-                  "jz4740_emc_read8 undefined addr " JZ_FMT_plx " \n", addr);
+                  "jz4740_emc_read8 undefined addr " TARGET_FMT_plx " \n", addr);
 
 
     }
@@ -713,7 +714,7 @@ static uint32_t jz4740_emc_read16(void *opaque, target_phys_addr_t addr)
         return (s->nferr3 >> ((addr - 0x128) * 8)) & 0xffff;
     default:
         cpu_abort(s->soc->env,
-                  "jz4740_emc_read16 undefined addr " JZ_FMT_plx " \n", addr);
+                  "jz4740_emc_read16 undefined addr " TARGET_FMT_plx " \n", addr);
     }
     return (0);
 }
@@ -772,7 +773,7 @@ static uint32_t jz4740_emc_read32(void *opaque, target_phys_addr_t addr)
         return s->dmar;
     default:
         cpu_abort(s->soc->env,
-                  "jz4740_emc_read32 undefined addr " JZ_FMT_plx " \n", addr);
+                  "jz4740_emc_read32 undefined addr " TARGET_FMT_plx " \n", addr);
     }
     return (0);
 }
@@ -782,7 +783,7 @@ static void jz4740_emc_write8(void *opaque, target_phys_addr_t addr,
 {
     struct jz4740_emc_s *s = (struct jz4740_emc_s *) opaque;
 
-    debug_out(DEBUG_EMC, "jz4740_emc_write8 addr "JZ_FMT_plx"  value %x\n", addr, value);
+    debug_out(DEBUG_EMC, "jz4740_emc_write8 addr "TARGET_FMT_plx"  value %x\n", addr, value);
 
     switch (addr)
     {
@@ -808,7 +809,7 @@ static void jz4740_emc_write8(void *opaque, target_phys_addr_t addr,
         break;
     default:
         cpu_abort(s->soc->env,
-                  "jz4740_emc_write8 undefined addr " JZ_FMT_plx
+                  "jz4740_emc_write8 undefined addr " TARGET_FMT_plx
                   "  value %x \n", addr, value);
     }
 }
@@ -817,7 +818,7 @@ static void jz4740_emc_write16(void *opaque, target_phys_addr_t addr,
 {
     struct jz4740_emc_s *s = (struct jz4740_emc_s *) opaque;
 
-    debug_out(DEBUG_EMC, "jz4740_emc_write16 addr "JZ_FMT_plx"  value %x\n", addr, value);
+    debug_out(DEBUG_EMC, "jz4740_emc_write16 addr "TARGET_FMT_plx"  value %x\n", addr, value);
     switch (addr)
     {
     case 0x108:
@@ -845,7 +846,7 @@ static void jz4740_emc_write16(void *opaque, target_phys_addr_t addr,
         break;
     default:
         cpu_abort(s->soc->env,
-                  "jz4740_emc_write16 undefined addr " JZ_FMT_plx
+                  "jz4740_emc_write16 undefined addr " TARGET_FMT_plx
                   "  value %x \n", addr, value);
     }
 }
@@ -860,7 +861,7 @@ static void jz4740_emc_write32(void *opaque, target_phys_addr_t addr,
 {
     struct jz4740_emc_s *s = (struct jz4740_emc_s *) opaque;
 
-    debug_out(DEBUG_EMC, "jz4740_emc_write32 addr "JZ_FMT_plx" value %x\n", addr, value);
+    debug_out(DEBUG_EMC, "jz4740_emc_write32 addr " TARGET_FMT_plx " value %x\n", addr, value);
     switch (addr)
     {
     case 0x104:
@@ -967,7 +968,7 @@ static void jz4740_emc_write32(void *opaque, target_phys_addr_t addr,
         break;
     default:
         cpu_abort(s->soc->env,
-                  "jz4740_emc_write32 undefined addr " JZ_FMT_plx
+                  "jz4740_emc_write32 undefined addr " TARGET_FMT_plx
                   "  value %x \n", addr, value);
 
     }
@@ -975,14 +976,14 @@ static void jz4740_emc_write32(void *opaque, target_phys_addr_t addr,
 }
 
 static CPUReadMemoryFunc *jz4740_emc_readfn[] = {
-    jz4740_emc_read8, 
-    jz4740_emc_read16, 
+    jz4740_emc_read8,
+    jz4740_emc_read16,
     jz4740_emc_read32,
 };
 
 static CPUWriteMemoryFunc *jz4740_emc_writefn[] = {
-    jz4740_emc_write8, 
-    jz4740_emc_write16, 
+    jz4740_emc_write8,
+    jz4740_emc_write16,
     jz4740_emc_write32,
 };
 
@@ -999,7 +1000,7 @@ static struct jz4740_emc_s *jz4740_emc_init(struct jz_state_s *soc,
     jz4740_emc_reset(s);
 
     iomemtype =
-        cpu_register_io_memory(0, jz4740_emc_readfn, jz4740_emc_writefn, s);
+        cpu_register_io_memory(jz4740_emc_readfn, jz4740_emc_writefn, s);
     cpu_register_physical_memory(s->base, 0x00010000, iomemtype);
     return s;
 
@@ -1172,7 +1173,7 @@ static uint32_t jz4740_gpio_read(void *opaque, target_phys_addr_t addr)
         return s->paflg[group];
     default:
         cpu_abort(s->soc->env,
-                  "jz4740_gpio_read undefined addr " JZ_FMT_plx " \n", addr);
+                  "jz4740_gpio_read undefined addr " TARGET_FMT_plx " \n", addr);
     }
     return (0);
 }
@@ -1183,7 +1184,7 @@ static void jz4740_gpio_write(void *opaque, target_phys_addr_t addr,
     struct jz4740_gpio_s *s = (struct jz4740_gpio_s *) opaque;
     uint32_t group;
 
-    debug_out(DEBUG_GPIO, "jz4740_gpio_write addr "JZ_FMT_plx"  value %x\n", addr, value);
+    debug_out(DEBUG_GPIO, "jz4740_gpio_write addr " TARGET_FMT_plx "  value %x\n", addr, value);
 
     switch (addr)
     {
@@ -1332,7 +1333,7 @@ static void jz4740_gpio_write(void *opaque, target_phys_addr_t addr,
         break;
     default:
         cpu_abort(s->soc->env,
-                  "jz4740_gpio_write undefined addr " JZ_FMT_plx
+                  "jz4740_gpio_write undefined addr " TARGET_FMT_plx
                   "  value %x \n", addr, value);
 
     }
@@ -1342,14 +1343,14 @@ static void jz4740_gpio_write(void *opaque, target_phys_addr_t addr,
 
 
 static CPUReadMemoryFunc *jz4740_gpio_readfn[] = {
-    jz4740_badwidth_read32, 
-    jz4740_badwidth_read32, 
+    jz4740_badwidth_read32,
+    jz4740_badwidth_read32,
     jz4740_gpio_read,
 };
 
 static CPUWriteMemoryFunc *jz4740_gpio_writefn[] = {
-    jz4740_badwidth_write32, 
-    jz4740_badwidth_write32, 
+    jz4740_badwidth_write32,
+    jz4740_badwidth_write32,
     jz4740_gpio_write,
 };
 
@@ -1365,7 +1366,7 @@ static struct jz4740_gpio_s *jz4740_gpio_init(struct jz_state_s *soc,
     jz4740_gpio_reset(s);
 
     iomemtype =
-        cpu_register_io_memory(0, jz4740_gpio_readfn, jz4740_gpio_writefn, s);
+        cpu_register_io_memory(jz4740_gpio_readfn, jz4740_gpio_writefn, s);
     cpu_register_physical_memory(s->base, 0x00010000, iomemtype);
     return s;
 
@@ -1401,14 +1402,14 @@ static void jz4740_rtc_update_interrupt(struct jz4740_rtc_s *s)
 {
 	if (!s->rtcsr&0x1)
 		return;
-	
+
     if (((s->rtccr & 0x40) && (s->rtccr & 0x20))
         || ((s->rtccr & 0x10) && (s->rtccr & 0x8)))
     {
     	debug_out(DEBUG_RTC,"s->rtccr %x \n",s->rtcsr);
     	qemu_set_irq(s->irq, 1);
     }
-        
+
 
 }
 
@@ -1447,7 +1448,7 @@ static void jz4740_rtc_hz(void *opaque)
 
 static void jz4740_rtc_reset(struct jz4740_rtc_s *s)
 {
-	
+
     s->rtccr = 0x81;
     s->next = 1000;
 
@@ -1486,7 +1487,7 @@ static uint32_t jz4740_rtc_read(void *opaque, target_phys_addr_t addr)
         return s->hspr;
     default:
         cpu_abort(s->soc->env,
-                  "jz4740_rtc_read undefined addr " JZ_FMT_plx "\n", addr);
+                  "jz4740_rtc_read undefined addr " TARGET_FMT_plx "\n", addr);
     }
 
     return (0);
@@ -1497,15 +1498,15 @@ static void jz4740_rtc_write(void *opaque, target_phys_addr_t addr,
 {
     struct jz4740_rtc_s *s = (struct jz4740_rtc_s *) opaque;
 
-    debug_out(DEBUG_RTC, "jz4740_rtc_write addr "JZ_FMT_plx" value %x\n", addr, value);
+    debug_out(DEBUG_RTC, "jz4740_rtc_write addr " TARGET_FMT_plx " value %x\n", addr, value);
 
     switch (addr)
     {
     case 0x0:
         s->rtccr = value & 0x7d;
-        if (!value & 0x40)
+        if (~value & 0x40)
             s->rtccr &= ~0x40;
-        if (!value & 0x10)
+        if (~value & 0x10)
             s->rtccr &= ~0x10;
         if (s->rtccr & 0x1)
         {
@@ -1543,21 +1544,21 @@ static void jz4740_rtc_write(void *opaque, target_phys_addr_t addr,
         break;
     default:
         cpu_abort(s->soc->env,
-                  "jz4740_rtc_write undefined addr " JZ_FMT_plx
+                  "jz4740_rtc_write undefined addr " TARGET_FMT_plx
                   "  value %x \n", addr, value);
     }
 
 }
 
 static CPUReadMemoryFunc *jz4740_rtc_readfn[] = {
-    jz4740_badwidth_read32, 
-    jz4740_badwidth_read32, 
+    jz4740_badwidth_read32,
+    jz4740_badwidth_read32,
     jz4740_rtc_read,
 };
 
 static CPUWriteMemoryFunc *jz4740_rtc_writefn[] = {
-    jz4740_badwidth_write32, 
-    jz4740_badwidth_write32, 
+    jz4740_badwidth_write32,
+    jz4740_badwidth_write32,
     jz4740_rtc_write,
 };
 
@@ -1575,7 +1576,7 @@ static struct jz4740_rtc_s *jz4740_rtc_init(struct jz_state_s *soc,
     jz4740_rtc_reset(s);
 
     iomemtype =
-        cpu_register_io_memory(0, jz4740_rtc_readfn, jz4740_rtc_writefn, s);
+        cpu_register_io_memory(jz4740_rtc_readfn, jz4740_rtc_writefn, s);
     cpu_register_physical_memory(s->base, 0x00001000, iomemtype);
     return s;
 }
@@ -1714,7 +1715,7 @@ static void jz4740_tcu_if_write8(void *opaque, target_phys_addr_t addr,
         break;
     default:
         cpu_abort(s->soc->env,
-                  "jz4740_tcu_if_write8 undefined addr " JZ_FMT_plx
+                  "jz4740_tcu_if_write8 undefined addr " TARGET_FMT_plx
                   " value %x \n", addr, value);
     }
 
@@ -1754,7 +1755,7 @@ static void jz4740_tcu_if_write32(void *opaque, target_phys_addr_t addr,
         break;
     default:
         cpu_abort(s->soc->env,
-                  "jz4740_tcu_if_write32 undefined addr " JZ_FMT_plx
+                  "jz4740_tcu_if_write32 undefined addr " TARGET_FMT_plx
                   " value %x \n", addr, value);
 
     }
@@ -1772,7 +1773,7 @@ static uint32_t jz4740_tcu_if_read8(void *opaque, target_phys_addr_t addr)
         return s->ter;
     default:
         cpu_abort(s->soc->env,
-                  "jz4740_tcu_if_read8 undefined addr " JZ_FMT_plx "\n", addr);
+                  "jz4740_tcu_if_read8 undefined addr " TARGET_FMT_plx "\n", addr);
     }
     return (0);
 }
@@ -1793,7 +1794,7 @@ static uint32_t jz4740_tcu_if_read32(void *opaque, target_phys_addr_t addr)
         return s->tmr;
     default:
         cpu_abort(s->soc->env,
-                  "jz4740_tcu_if_read32 undefined addr " JZ_FMT_plx "\n", addr);
+                  "jz4740_tcu_if_read32 undefined addr " TARGET_FMT_plx "\n", addr);
 
     }
     return (0);
@@ -1802,13 +1803,13 @@ static uint32_t jz4740_tcu_if_read32(void *opaque, target_phys_addr_t addr)
 
 static CPUReadMemoryFunc *jz4740_tcu_if_readfn[] = {
     jz4740_tcu_if_read8,
-    jz4740_badwidth_read32, 
+    jz4740_badwidth_read32,
     jz4740_tcu_if_read32,
 };
 
 static CPUWriteMemoryFunc *jz4740_tcu_if_writefn[] = {
-    jz4740_tcu_if_write8, 
-    jz4740_badwidth_write32, 
+    jz4740_tcu_if_write8,
+    jz4740_badwidth_write32,
     jz4740_tcu_if_write32,
 };
 
@@ -1830,8 +1831,7 @@ static struct jz4740_tcu_s *jz4740_tcu_if_init(struct jz_state_s *soc,
     jz4740_tcu_if_reset(s);
 
     iomemtype =
-        cpu_register_io_memory(0, jz4740_tcu_if_readfn, jz4740_tcu_if_writefn,
-                               s);
+        cpu_register_io_memory(jz4740_tcu_if_readfn, jz4740_tcu_if_writefn, s);
     cpu_register_physical_memory(s->base, 0x00000040, iomemtype);
     return s;
 
@@ -1988,7 +1988,7 @@ static uint32_t jz4740_lcdc_read(void *opaque, target_phys_addr_t addr)
         return s->lcdcmd1;
     default:
         cpu_abort(s->soc->env,
-                  "jz4740_lcdc_read undefined addr " JZ_FMT_plx " \n", addr);
+                  "jz4740_lcdc_read undefined addr " TARGET_FMT_plx " \n", addr);
 
     }
 
@@ -1999,7 +1999,7 @@ static void jz4740_lcdc_write(void *opaque, target_phys_addr_t addr,
 {
     struct jz4740_lcdc_s *s = (struct jz4740_lcdc_s *) opaque;
 
-    debug_out(DEBUG_LCDC, "jz4740_lcdc_write addr "JZ_FMT_plx" value %x\n", addr, value);
+    debug_out(DEBUG_LCDC, "jz4740_lcdc_write addr "TARGET_FMT_plx" value %x\n", addr, value);
 
     switch (addr)
     {
@@ -2066,21 +2066,21 @@ static void jz4740_lcdc_write(void *opaque, target_phys_addr_t addr,
         break;
     default:
         cpu_abort(s->soc->env,
-                  "jz4740_lcdc_write undefined addr " JZ_FMT_plx " value %x \n",
+                  "jz4740_lcdc_write undefined addr " TARGET_FMT_plx " value %x \n",
                   addr, value);
     }
 
 }
 
 static CPUReadMemoryFunc *jz4740_lcdc_readfn[] = {
-    jz4740_badwidth_read32, 
-    jz4740_badwidth_read32, 
+    jz4740_badwidth_read32,
+    jz4740_badwidth_read32,
     jz4740_lcdc_read,
 };
 
 static CPUWriteMemoryFunc *jz4740_lcdc_writefn[] = {
     jz4740_badwidth_write32,
-    jz4740_badwidth_write32, 
+    jz4740_badwidth_write32,
     jz4740_lcdc_write,
 };
 
@@ -2109,8 +2109,8 @@ static void *jz4740_lcd_get_buffer(struct jz4740_lcdc_s *s,
         cpu_abort(cpu_single_env, "%s: framebuffer outside RAM!\n",
                   __FUNCTION__);
     else
-        return phys_ram_base +
-            (pd & TARGET_PAGE_MASK) + (addr & ~TARGET_PAGE_MASK);
+        return qemu_get_ram_ptr(
+            (pd & TARGET_PAGE_MASK) + (addr & ~TARGET_PAGE_MASK));
 }
 
 static void jz4740_lcd_update_display(void *opaque)
@@ -2151,7 +2151,7 @@ static void jz4740_lcd_update_display(void *opaque)
     if (s->width != ds_get_width(s->state) ||
         s->height != ds_get_height(s->state))
     {
-        qemu_console_resize(s->console, s->width, s->height);
+        qemu_console_resize(s->state, s->width, s->height);
         s->invalidate = 1;
     }
 
@@ -2183,7 +2183,7 @@ static inline void jz4740_lcd_invalidate_display(void *opaque)
 }
 
 static struct jz4740_lcdc_s *jz4740_lcdc_init(struct jz_state_s *soc,
-                                              qemu_irq irq, DisplayState * ds)
+                                              qemu_irq irq)
 {
     int iomemtype;
 
@@ -2191,18 +2191,16 @@ static struct jz4740_lcdc_s *jz4740_lcdc_init(struct jz_state_s *soc,
     s->base = JZ4740_PHYS_BASE(JZ4740_LCD_BASE);
     s->soc = soc;
     s->irq = irq;
-    s->state = ds;
-
 
     jz4740_lcdc_reset(s);
 
     iomemtype =
-        cpu_register_io_memory(0, jz4740_lcdc_readfn, jz4740_lcdc_writefn, s);
+        cpu_register_io_memory(jz4740_lcdc_readfn, jz4740_lcdc_writefn, s);
     cpu_register_physical_memory(s->base, 0x10000, iomemtype);
 
-    s->console = graphic_console_init(s->state, jz4740_lcd_update_display,
-                                      jz4740_lcd_invalidate_display,
-                                      NULL, NULL, s);
+    s->state = graphic_console_init(jz4740_lcd_update_display,
+                                    jz4740_lcd_invalidate_display,
+                                    NULL, NULL, s);
     switch (ds_get_bits_per_pixel(s->state))
     {
     case 0x0:
@@ -2229,7 +2227,6 @@ static struct jz4740_lcdc_s *jz4740_lcdc_init(struct jz_state_s *soc,
     }
 
     return s;
-
 }
 
 #define JZ4740_DMA_NUM         6
@@ -2273,21 +2270,21 @@ static inline void jz4740_dma_transfer(struct jz4740_dma_s *s,
     pd_src = cpu_get_physical_page_desc(src);
     if ((pd_src & ~TARGET_PAGE_MASK) != IO_MEM_RAM)
         /* TODO */
-        cpu_abort(cpu_single_env, "%s: DMA source address "JZ_FMT_plx" outside RAM!\n",
+        cpu_abort(cpu_single_env, "%s: DMA source address " TARGET_FMT_plx " outside RAM!\n",
                   __FUNCTION__, src);
     else
-        sr = phys_ram_base +
-            (pd_src & TARGET_PAGE_MASK) + (src & ~TARGET_PAGE_MASK);
+        sr = qemu_get_ram_ptr(
+            (pd_src & TARGET_PAGE_MASK) + (src & ~TARGET_PAGE_MASK));
 
     pd_dest = cpu_get_physical_page_desc(dest);
     if ((pd_dest & ~TARGET_PAGE_MASK) != IO_MEM_RAM)
         /* TODO */
         cpu_abort(cpu_single_env,
-                  "%s: DMA destination address "JZ_FMT_plx" outside RAM!\n",
+                  "%s: DMA destination address " TARGET_FMT_plx " outside RAM!\n",
                   __FUNCTION__, dest);
     else
-        de = phys_ram_base +
-            (pd_dest & TARGET_PAGE_MASK) + (dest & ~TARGET_PAGE_MASK);
+        de = qemu_get_ram_ptr(
+            (pd_dest & TARGET_PAGE_MASK) + (dest & ~TARGET_PAGE_MASK));
 
     memcpy(de, sr, len);
 }
@@ -2345,23 +2342,22 @@ static inline void jz4740_dma_drun(struct jz4740_dma_s *s, int channel)
     desc_phy = s->dda[channel];
     if (desc_phy & 0xf)
         cpu_abort(s->soc->env,
-                  "jz4740_dma_drun descriptor address " JZ_FMT_plx
+                  "jz4740_dma_drun descriptor address " TARGET_FMT_plx
                   " must be 4 bytes aligned \n", desc_phy);
 
     pd = cpu_get_physical_page_desc(desc_phy);
     if ((pd & ~TARGET_PAGE_MASK) != IO_MEM_RAM)
         cpu_abort(cpu_single_env,
-                  "%s: DMA descriptor address " JZ_FMT_plx " outside RAM!\n",
+                  "%s: DMA descriptor address " TARGET_FMT_plx " outside RAM!\n",
                   __FUNCTION__, desc_phy);
     else
-        desc = (struct jz4740_desc_s *) (phys_ram_base +
+        desc = (struct jz4740_desc_s *) qemu_get_ram_ptr(
                                          (pd & TARGET_PAGE_MASK) +
                                          (desc_phy & ~TARGET_PAGE_MASK));
 
     if (!desc)
         cpu_abort(cpu_single_env,
-                  "%s: DMA descriptor %x is NULL!\n", __FUNCTION__,
-                  (uint32_t)desc);
+                  "%s: DMA descriptor is NULL!\n", __FUNCTION__);
 
     while (1)
     {
@@ -2396,18 +2392,17 @@ static inline void jz4740_dma_drun(struct jz4740_dma_s *s, int channel)
             pd = cpu_get_physical_page_desc(desc_phy);
             if ((pd & ~TARGET_PAGE_MASK) != IO_MEM_RAM)
                 cpu_abort(cpu_single_env,
-                          "%s: DMA descriptor address "JZ_FMT_plx" outside RAM!\n",
+                          "%s: DMA descriptor address " TARGET_FMT_plx " outside RAM!\n",
                           __FUNCTION__, desc_phy);
             else
-                desc = (struct jz4740_desc_s *) (phys_ram_base +
+                desc = (struct jz4740_desc_s *) qemu_get_ram_ptr(
                                                  (pd & TARGET_PAGE_MASK)
                                                  +
                                                  (desc_phy &
                                                   ~TARGET_PAGE_MASK));
             if (!desc)
                 cpu_abort(cpu_single_env,
-                          "%s: DMA descriptor %x is NULL!\n",
-                          __FUNCTION__, (uint32_t) desc);
+                          "%s: DMA descriptor is NULL!\n", __FUNCTION__);
         }
         else
             break;
@@ -2520,7 +2515,7 @@ static uint32_t jz4740_dma_read(void *opaque, target_phys_addr_t addr)
         return s->dda[channel];
     default:
         cpu_abort(s->soc->env,
-                  "jz4740_dma_read undefined addr " JZ_FMT_plx "  \n", addr);
+                  "jz4740_dma_read undefined addr " TARGET_FMT_plx "  \n", addr);
     }
     return (0);
 }
@@ -2531,7 +2526,7 @@ static void jz4740_dma_write(void *opaque, target_phys_addr_t addr,
     struct jz4740_dma_s *s = (struct jz4740_dma_s *) opaque;
     int channel;
 
-    debug_out(DEBUG_DMA, "jz4740_dma_write addr "JZ_FMT_plx"  value %x \n", addr, value);
+    debug_out(DEBUG_DMA, "jz4740_dma_write addr " TARGET_FMT_plx "  value %x \n", addr, value);
     switch (addr)
     {
     case 0x304:
@@ -2625,20 +2620,20 @@ static void jz4740_dma_write(void *opaque, target_phys_addr_t addr,
         break;
     default:
         cpu_abort(s->soc->env,
-                  "jz4740_dma_read undefined addr " JZ_FMT_plx "  \n", addr);
+                  "jz4740_dma_read undefined addr " TARGET_FMT_plx "  \n", addr);
     }
 
 }
 
 static CPUReadMemoryFunc *jz4740_dma_readfn[] = {
-    jz4740_badwidth_read32, 
-    jz4740_badwidth_read32, 
+    jz4740_badwidth_read32,
+    jz4740_badwidth_read32,
     jz4740_dma_read,
 };
 
 static CPUWriteMemoryFunc *jz4740_dma_writefn[] = {
-    jz4740_badwidth_write32, 
-    jz4740_badwidth_write32, 
+    jz4740_badwidth_write32,
+    jz4740_badwidth_write32,
     jz4740_dma_write,
 };
 
@@ -2655,7 +2650,7 @@ static struct jz4740_dma_s *jz4740_dma_init(struct jz_state_s *soc,
     jz4740_dma_reset(s);
 
     iomemtype =
-        cpu_register_io_memory(0, jz4740_dma_readfn, jz4740_dma_writefn, s);
+        cpu_register_io_memory(jz4740_dma_readfn, jz4740_dma_writefn, s);
     cpu_register_physical_memory(s->base, 0x00010000, iomemtype);
     return s;
 
@@ -2691,8 +2686,8 @@ struct jz4740_sadc_s
 
     uint16_t pen_state;
     uint8_t read_index;
-    
-    
+
+
 };
 
 static void jz4740_touchscreen_interrupt(struct jz4740_sadc_s *s)
@@ -2705,7 +2700,7 @@ static void jz4740_touchscreen_interrupt(struct jz4740_sadc_s *s)
     	debug_out(DEBUG_SADC,"irq s->adctrl %x s->adstate %x \n",s->adctrl,s->adstate);
     	qemu_set_irq(s->irq,1);
     }
-    	
+
 }
 
 static void jz4740_touchscreen_event(void *opaque,
@@ -2730,7 +2725,7 @@ static void jz4740_touchscreen_event(void *opaque,
 	   jz4740_touchscreen_interrupt(s);
 	}
 	s->pen_state = buttons_state;
-	
+
 }
 
 static uint32_t jz4740_sadc_read8(void *opaque, target_phys_addr_t addr)
@@ -2747,7 +2742,7 @@ static uint32_t jz4740_sadc_read8(void *opaque, target_phys_addr_t addr)
     		return s->adstate;
     default:
         cpu_abort(s->soc->env,
-                  "jz4740_sadc_read8 undefined addr " JZ_FMT_plx "  \n", addr);
+                  "jz4740_sadc_read8 undefined addr " TARGET_FMT_plx "  \n", addr);
     }
     return (0);
 }
@@ -2755,7 +2750,7 @@ static uint32_t jz4740_sadc_read8(void *opaque, target_phys_addr_t addr)
 static uint32_t jz4740_sdac_read16(void *opaque, target_phys_addr_t addr)
 {
     struct jz4740_sadc_s *s = (struct jz4740_sadc_s *) opaque;
-    
+
     switch (addr)
     {
     	case 0x10:
@@ -2768,7 +2763,7 @@ static uint32_t jz4740_sdac_read16(void *opaque, target_phys_addr_t addr)
     		return s->adsdat;
     	default:
         cpu_abort(s->soc->env,
-                  "jz4740_sdac_read16 undefined addr " JZ_FMT_plx "  \n", addr);
+                  "jz4740_sdac_read16 undefined addr " TARGET_FMT_plx "  \n", addr);
     }
     return (0);
 }
@@ -2794,7 +2789,7 @@ static uint32_t jz4740_sdac_read32(void *opaque, target_phys_addr_t addr)
     		}
     	default:
         cpu_abort(s->soc->env,
-                  "jz4740_sdac_read32 undefined addr " JZ_FMT_plx "  \n", addr);
+                  "jz4740_sdac_read32 undefined addr " TARGET_FMT_plx "  \n", addr);
     }
     return (0);
 }
@@ -2804,7 +2799,7 @@ static void jz4740_sadc_write8(void *opaque, target_phys_addr_t addr,
 {
     struct jz4740_sadc_s *s = (struct jz4740_sadc_s *) opaque;
 
-    debug_out(DEBUG_SADC, "jz4740_sadc_write8 addr "JZ_FMT_plx" value %x\n", addr, value);
+    debug_out(DEBUG_SADC, "jz4740_sadc_write8 addr " TARGET_FMT_plx " value %x\n", addr, value);
 
     switch (addr)
     {
@@ -2820,7 +2815,7 @@ static void jz4740_sadc_write8(void *opaque, target_phys_addr_t addr,
     		break;
     	default:
         cpu_abort(s->soc->env,
-                  "jz4740_sadc_write8 undefined addr " JZ_FMT_plx "  value %x \n", addr,value);
+                  "jz4740_sadc_write8 undefined addr " TARGET_FMT_plx "  value %x \n", addr,value);
     }
 }
 
@@ -2829,7 +2824,7 @@ static void jz4740_sadc_write16(void *opaque, target_phys_addr_t addr,
 {
     struct jz4740_sadc_s *s = (struct jz4740_sadc_s *) opaque;
 
-    debug_out(DEBUG_SADC, "jz4740_sadc_write16 addr "JZ_FMT_plx"  value %x\n", addr, value);
+    debug_out(DEBUG_SADC, "jz4740_sadc_write16 addr " TARGET_FMT_plx "  value %x\n", addr, value);
 
     switch (addr)
     {
@@ -2845,7 +2840,7 @@ static void jz4740_sadc_write16(void *opaque, target_phys_addr_t addr,
     		s->adsdat = 0x0;
     	default:
           cpu_abort(s->soc->env,
-                  "jz4740_sadc_write16 undefined addr " JZ_FMT_plx "  value %x \n", addr,value);
+                  "jz4740_sadc_write16 undefined addr " TARGET_FMT_plx "  value %x \n", addr,value);
     }
 }
 
@@ -2855,7 +2850,7 @@ static void jz4740_sadc_write32(void *opaque, target_phys_addr_t addr,
     struct jz4740_sadc_s *s = (struct jz4740_sadc_s *) opaque;
 
 
-    debug_out(DEBUG_SADC, "jz4740_sadc_write32 addr "JZ_FMT_plx"  value %x\n", addr, value);
+    debug_out(DEBUG_SADC, "jz4740_sadc_write32 addr " TARGET_FMT_plx "  value %x\n", addr, value);
 
     switch (addr)
     {
@@ -2870,7 +2865,7 @@ static void jz4740_sadc_write32(void *opaque, target_phys_addr_t addr,
     		break;
     	default:
           cpu_abort(s->soc->env,
-                  "jz4740_sadc_write32 undefined addr " JZ_FMT_plx "  value %x \n", addr,value);
+                  "jz4740_sadc_write32 undefined addr " TARGET_FMT_plx "  value %x \n", addr,value);
     }
 }
 
@@ -2884,20 +2879,20 @@ static void jz4740_sadc_reset(struct jz4740_sadc_s *s)
 }
 
 static CPUReadMemoryFunc *jz4740_sadc_readfn[] = {
-    jz4740_sadc_read8, 
-    jz4740_sdac_read16, 
+    jz4740_sadc_read8,
+    jz4740_sdac_read16,
     jz4740_sdac_read32,
 };
 
 static CPUWriteMemoryFunc *jz4740_sadc_writefn[] = {
-    jz4740_sadc_write8, 
-    jz4740_sadc_write16, 
+    jz4740_sadc_write8,
+    jz4740_sadc_write16,
     jz4740_sadc_write32,
 };
 
 static struct jz4740_sadc_s *jz4740_sadc_init(struct jz_state_s *soc,
                                             qemu_irq irq)
-{   
+{
 	int iomemtype;
 	struct jz4740_sadc_s *s;
 
@@ -2913,7 +2908,7 @@ static struct jz4740_sadc_s *jz4740_sadc_init(struct jz_state_s *soc,
     jz4740_sadc_reset(s);
 
     iomemtype =
-        cpu_register_io_memory(0, jz4740_sadc_readfn, jz4740_sadc_writefn, s);
+        cpu_register_io_memory(jz4740_sadc_readfn, jz4740_sadc_writefn, s);
     cpu_register_physical_memory(s->base, 0x00001000, iomemtype);
     return s;
 }
@@ -2924,7 +2919,7 @@ static void jz4740_cpu_reset(void *opaque)
 }
 
 struct jz_state_s *jz4740_init(unsigned long sdram_size,
-                               uint32_t osc_extal_freq, DisplayState * ds)
+                               uint32_t osc_extal_freq)
 {
     struct jz_state_s *s = (struct jz_state_s *)
         qemu_mallocz(sizeof(struct jz_state_s));
@@ -2950,9 +2945,9 @@ struct jz_state_s *jz4740_init(unsigned long sdram_size,
     jz_clk_init(s, osc_extal_freq);
 
     /*map sram to 0x80000000 and sdram to 0x80004000 */
-    sram_base = qemu_ram_alloc(s->sram_size);
+    sram_base = qemu_ram_alloc(NULL, "jz4740.sram", s->sram_size);
     cpu_register_physical_memory(0x0, s->sram_size, (sram_base | IO_MEM_RAM));
-    sdram_base = qemu_ram_alloc(s->sdram_size);
+    sdram_base = qemu_ram_alloc(NULL, "jz4740.sdram", s->sdram_size);
     cpu_register_physical_memory(JZ4740_SRAM_SIZE, s->sdram_size,
                                  (sdram_base | IO_MEM_RAM));
 
@@ -2971,12 +2966,12 @@ struct jz_state_s *jz4740_init(unsigned long sdram_size,
     s->rtc = jz4740_rtc_init(s, intc[15]);
     s->tcu = jz4740_tcu_if_init(s, intc[23], intc[22], intc[21]);
     jz4740_tcu_init(s, s->tcu, 0);
-    s->lcdc = jz4740_lcdc_init(s, intc[30], ds);
+    s->lcdc = jz4740_lcdc_init(s, intc[30]);
     s->dma = jz4740_dma_init(s, intc[20]);
     s->sadc = jz4740_sadc_init(s,intc[12]);
 
     if (serial_hds[0])
-        serial_mm_init(0x10030000, 2, intc[9], 57600, serial_hds[0], 1);
+        serial_mm_init(0x10030000, 2, intc[9], 57600, serial_hds[0], 1, 0);
 
     return s;
 }

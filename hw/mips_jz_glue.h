@@ -23,7 +23,7 @@
  */
 
 
- 
+
 #ifdef TCU_INDEX
 static inline void glue(jz4740_tcu_time_sync,
                         TCU_INDEX) (struct jz4740_tcu_s * s)
@@ -48,8 +48,8 @@ static inline void glue(jz4740_tcu_time_sync,
          //         s->freq[TCU_INDEX], s->prescale[TCU_INDEX]);
        // debug_out(DEBUG_TCU, "distance %lld s->time[TCU_INDEX] %lld \n",
        //           distance, s->time[TCU_INDEX]);
-        //temp = muldiv64(distance,(s->freq[TCU_INDEX]/s->prescale[TCU_INDEX]),ticks_per_sec);
-        temp = muldiv64(distance, 46875, ticks_per_sec);
+        //temp = muldiv64(distance,(s->freq[TCU_INDEX]/s->prescale[TCU_INDEX]),get_ticks_per_sec());
+        temp = muldiv64(distance, 46875, get_ticks_per_sec());
         if (temp != 0)
         {
             /*distance is too short */
@@ -63,7 +63,7 @@ static inline void glue(jz4740_tcu_time_sync,
              */
         }
 
-        //printf("%lld distance %lld \n",muldiv64(distance,(s->freq[TCU_INDEX]/s->prescale[TCU_INDEX]),ticks_per_sec),distance);
+        //printf("%lld distance %lld \n",muldiv64(distance,(s->freq[TCU_INDEX]/s->prescale[TCU_INDEX]),get_ticks_per_sec()),distance);
 
         if (s->tcnt[TCU_INDEX] >= 0x10000)
             s->tcnt[TCU_INDEX] = 0x0;
@@ -81,7 +81,7 @@ static inline void glue(jz4740_tcu_start_half,
     /*The timer has not beed initialized */
     if (!s->half_timer[TCU_INDEX])
         return;
-	
+
     if ((!(s->tsr & (1 << (TCU_INDEX+16)))) && (s->ter & (1 << (TCU_INDEX+16)))
         && (s->freq[TCU_INDEX] != 0))
     {
@@ -89,7 +89,7 @@ static inline void glue(jz4740_tcu_start_half,
         /*calculate next fire time */
         count =
             (s->tdhr[TCU_INDEX] - s->tcnt[TCU_INDEX]) * s->prescale[TCU_INDEX];
-        next += muldiv64(count, ticks_per_sec, s->freq[TCU_INDEX]);
+        next += muldiv64(count, get_ticks_per_sec(), s->freq[TCU_INDEX]);
         qemu_mod_timer(s->half_timer[TCU_INDEX], next);
 
     }
@@ -107,7 +107,7 @@ static inline void glue(jz4740_tcu_start_full,
     /*The timer has not beed initialized */
     if (!s->full_timer[TCU_INDEX])
         return;
-        
+
 	debug_out(DEBUG_TCU, "s->tsr %d  s->ter %d  s->freq[TCU_INDEX]  %d \n",
        			          s->tsr ,  s->ter ,s->freq[TCU_INDEX]);
     if ((!(s->tsr & (1 << TCU_INDEX))) && (s->ter & (1 << TCU_INDEX))
@@ -117,7 +117,7 @@ static inline void glue(jz4740_tcu_start_full,
         /*calculate next fire time */
         count =
             (s->tdfr[TCU_INDEX] - s->tcnt[TCU_INDEX]) * s->prescale[TCU_INDEX];
-        next += muldiv64(count, ticks_per_sec, s->freq[TCU_INDEX]);
+        next += muldiv64(count, get_ticks_per_sec(), s->freq[TCU_INDEX]);
         qemu_mod_timer(s->full_timer[TCU_INDEX], next);
                 debug_out(DEBUG_TCU, "s->tdfr[TCU_INDEX]  %d  s->tcnt[TCU_INDEX] %d  next  %lld \n",
        			          s->tdfr[TCU_INDEX] ,  s->tcnt[TCU_INDEX]  ,next);
@@ -127,10 +127,10 @@ static inline void glue(jz4740_tcu_start_full,
 }
 
 
-/* 
+/*
  *     TCNT will reset to 0 if it reach to TDFR.
  *       So for the half compare, the next fire count is (TDFR-TDHR) + TDHR
- *                                                                                            
+ *
  */
 static void glue(jz4740_tcu_half_cb, TCU_INDEX) (void *opaque)
 {
@@ -142,7 +142,7 @@ static void glue(jz4740_tcu_half_cb, TCU_INDEX) (void *opaque)
         && (s->freq[TCU_INDEX] != 0))
     {
         count = s->tdfr[TCU_INDEX] * s->prescale[TCU_INDEX];
-        next += muldiv64(count, ticks_per_sec, s->freq[TCU_INDEX]);
+        next += muldiv64(count, get_ticks_per_sec(), s->freq[TCU_INDEX]);
         qemu_mod_timer(s->half_timer[TCU_INDEX], next);
         s->tfr |= 1 << (16 + TCU_INDEX);
         jz4740_tcu_update_interrupt(s);
@@ -164,7 +164,7 @@ static void glue(jz4740_tcu_full_cb, TCU_INDEX) (void *opaque)
         && (s->freq[TCU_INDEX] != 0))
     {
         count = s->tdfr[TCU_INDEX] * s->prescale[TCU_INDEX];
-        next += muldiv64(count, ticks_per_sec, s->freq[TCU_INDEX]);
+        next += muldiv64(count, get_ticks_per_sec(), s->freq[TCU_INDEX]);
         qemu_mod_timer(s->full_timer[TCU_INDEX], next);
         s->tfr |= 1 << TCU_INDEX;
         jz4740_tcu_update_interrupt(s);
@@ -196,7 +196,7 @@ static uint32_t glue(jz4740_tcu_read, TCU_INDEX) (void *opaque,
         return s->tcsr[TCU_INDEX];
     default:
         cpu_abort(s->soc->env,
-                  "jz4740_tcu_read undefined addr "JZ_FMT_plx" timer %x \n", addr,
+                  "jz4740_tcu_read undefined addr " TARGET_FMT_plx " timer %x \n", addr,
                   TCU_INDEX);
     }
     return (0);
@@ -208,14 +208,14 @@ static void glue(jz4740_tcu_write, TCU_INDEX) (void *opaque,
 {
     struct jz4740_tcu_s *s = (struct jz4740_tcu_s *) opaque;
 
-    debug_out(DEBUG_TCU, "jz4740_tcu_write%x addr "JZ_FMT_plx" value %x \n", TCU_INDEX,
+    debug_out(DEBUG_TCU, "jz4740_tcu_write%x addr " TARGET_FMT_plx " value %x \n", TCU_INDEX,
               addr, value);
     addr -= 0x40 + TCU_INDEX * 0x10;
 
     switch (addr)
     {
     case 0x0:
-         /*TDFR*/ 
+         /*TDFR*/
          s->tdfr[TCU_INDEX] = value & 0xffff;
         glue(jz4740_tcu_start_full, TCU_INDEX) (s);
         break;
@@ -253,7 +253,7 @@ static void glue(jz4740_tcu_write, TCU_INDEX) (void *opaque,
         break;
     default:
         cpu_abort(s->soc->env,
-                  "jz4740_tcu_write undefined addr "JZ_FMT_plx" timer %x \n", addr,
+                  "jz4740_tcu_write undefined addr " TARGET_FMT_plx " timer %x \n", addr,
                   TCU_INDEX);
 
     }
@@ -281,7 +281,7 @@ static void glue(jz4740_tcu_init, TCU_INDEX) (struct jz_state_s * soc,
         qemu_new_timer(vm_clock, glue(jz4740_tcu_full_cb, TCU_INDEX), s);
 
     iomemtype =
-        cpu_register_io_memory(0, glue(jz4740_tcu_readfn, TCU_INDEX),
+        cpu_register_io_memory(glue(jz4740_tcu_readfn, TCU_INDEX),
                                glue(jz4740_tcu_writefn, TCU_INDEX), s);
     cpu_register_physical_memory(s->base + 0x00000040 + TCU_INDEX * 0x10,
                                  0x00000010, iomemtype);

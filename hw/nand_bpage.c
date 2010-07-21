@@ -22,7 +22,7 @@
 #include "hw.h"
 #include "flash.h"
 #include "block.h"
-#include "sysemu.h"
+#include "blockdev.h"
 
 
 #define MAX_PAGE		0x800
@@ -72,7 +72,7 @@ struct nand_bflash_s
     uint32 addr_cycle;
 
     uint32 cmd, status;
-  #ifdef DEBUG  
+  #ifdef DEBUG
     FILE *fp;
   #endif
 };
@@ -87,7 +87,7 @@ static void debug_init(struct nand_bflash_s *s)
 		fprintf(stderr,"can not open nandflash_debug.txt \n");
 		exit(-1);
 	}
-		
+
 }
 static void debug_out(struct nand_bflash_s *s,const char* format, ...)
 {
@@ -104,11 +104,11 @@ static void debug_out(struct nand_bflash_s *s,const char* format, ...)
 #else
 static void debug_init(struct nand_bflash_s *s)
 {
-	
+
 }
 static void debug_out(struct nand_bflash_s *s,const char* format, ...)
 {
-	
+
 }
 
 #endif
@@ -171,7 +171,7 @@ static void nandb_blk_load(struct nand_bflash_s *s)
 	debug_out(s,"nandb_blk_load page number %x s->addr_low %x s->addr_high %x\n",page_number,s->addr_low,s->addr_high);
     if (page_number >= s->pages)
         return;
-	
+
     if (bdrv_read(s->bdrv, (page_number * s->page_oob_size + offset) >> 9,
                   s->io, (s->page_sectors + 2)) == -1)
         printf("%s: read error in sector %i\n",
@@ -195,7 +195,7 @@ static void nandb_blk_erase(struct nand_bflash_s *s)
         return;
 
     addr = page_number * s->page_oob_size;
-    
+
     sector = addr >> 9;
     if (bdrv_read(s->bdrv, sector, iobuf, 1) == -1)
         printf("%s: read error in sector %i\n", __FUNCTION__, sector);
@@ -353,7 +353,7 @@ void nandb_write_address(struct nand_bflash_s *s, uint16_t value)
     	s->addr_low += colum_addr;
     }
     s->addr_cycle++;
-    
+
 }
 
 uint8_t nandb_read_data8(struct nand_bflash_s *s)
@@ -370,11 +370,11 @@ uint8_t nandb_read_data8(struct nand_bflash_s *s)
 		fprintf(stderr,"iolen <0 \n");
 		exit(-1);
 	}
-  	if (s->cmd!=0x70)  	
+  	if (s->cmd!=0x70)
     	s->iolen -=1 ;
     ret = *((uint8_t *)s->ioaddr);
-    if (s->cmd!=0x70)  	
-    	s->ioaddr += 1;   
+    if (s->cmd!=0x70)
+    	s->ioaddr += 1;
 
     //debug_out(s," %x ",ret);
     return ret;
@@ -405,11 +405,11 @@ uint16_t nandb_read_data16(struct nand_bflash_s *s)
 		fprintf(stderr,"iolen <0 \n");
 		exit(-1);
 	}
-  	if (s->cmd!=0x70)  	
+  	if (s->cmd!=0x70)
     	s->iolen -=2 ;
     ret = *((uint16_t *)s->ioaddr);
-    if (s->cmd!=0x70)  	
-    	s->ioaddr += 2;    	
+    if (s->cmd!=0x70)
+    	s->ioaddr += 2;
     return ret;
 }
 
@@ -429,7 +429,7 @@ struct nand_bflash_s *nandb_init(int manf_id, int chip_id)
 {
     //int pagesize;
     struct nand_bflash_s *s;
-    int index;
+    DriveInfo *dinfo;
     int i;
 
     s = (struct nand_bflash_s *) qemu_mallocz(sizeof(struct nand_bflash_s));
@@ -464,10 +464,10 @@ struct nand_bflash_s *nandb_init(int manf_id, int chip_id)
         exit(-1);
     }
 
-    
-    index = drive_get_index(IF_MTD, 0, 0);
-    if (index != -1)
-        s->bdrv = drives_table[index].bdrv;
+
+    dinfo = drive_get(IF_MTD, 0, 0);
+    if (dinfo)
+        s->bdrv = dinfo->bdrv;
     else
     {
     	fprintf(stderr, "%s: Please use -mtdblock to specify flash image.\n",

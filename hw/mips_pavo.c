@@ -114,17 +114,16 @@ CPUWriteMemoryFunc *pavo_nand_writefn[] = {
         jz4740_badwidth_write16,
         jz4740_badwidth_write32,
 };
-    
+
 static void pavo_nand_setup(struct mips_pavo_s *s)
 {
 	int iomemtype;
-	
+
 	/*K9K8G08U0*/
 	s->nand = nandb_init(NAND_MFR_SAMSUNG,0xd3);
 
-	iomemtype = cpu_register_io_memory(0, pavo_nand_readfn,
-                    pavo_nand_writefn, s);
-    cpu_register_physical_memory(0x18000000, 0x20000, iomemtype);
+	iomemtype = cpu_register_io_memory(pavo_nand_readfn, pavo_nand_writefn, s);
+	cpu_register_physical_memory(0x18000000, 0x20000, iomemtype);
 }
 
 static int pavo_nand_read_page(struct mips_pavo_s *s,uint8_t *buf, uint16_t page_addr)
@@ -160,13 +159,13 @@ static int pavo_boot_from_nand(struct mips_pavo_s *s)
 	uint32_t nand_pages,i;
 
 	//int fd;
-	
+
 
 	len = 0x2000; /*8K*/
-	
+
 	/*put the first page into internal ram*/
-	load_dest = phys_ram_base;
-	
+	load_dest = qemu_get_ram_ptr(0);
+
 	nand_pages = len/0x800;
 	//fd = open("u-boot.bin", O_RDWR | O_CREAT);
 	for (i=0;i<nand_pages;i++)
@@ -187,15 +186,16 @@ static int pavo_boot_from_nand(struct mips_pavo_s *s)
  static int pavo_rom_emu(struct mips_pavo_s *s)
 {
 	if (pavo_boot_from_nand(s)<0)
-		return (-1); 
+		return (-1);
 	return (0);
 }
 
-static void mips_pavo_init(ram_addr_t ram_size, int vga_ram_size,
-                    const char *boot_device, DisplayState * ds,
-                    const char *kernel_filename,
-                    const char *kernel_cmdline,
-                    const char *initrd_filename, const char *cpu_model)
+static void mips_pavo_init(ram_addr_t ram_size,
+                           const char *boot_device,
+                           const char *kernel_filename,
+                           const char *kernel_cmdline,
+                           const char *initrd_filename,
+                           const char *cpu_model)
 {
     struct mips_pavo_s *s = (struct mips_pavo_s *) qemu_mallocz(sizeof(*s));
 
@@ -205,7 +205,7 @@ static void mips_pavo_init(ram_addr_t ram_size, int vga_ram_size,
                 PAVO_RAM_SIZE + JZ4740_SRAM_SIZE);
         exit(1);
     }
-    s->soc = jz4740_init(PAVO_RAM_SIZE, PAVO_OSC_EXTAL,ds);
+    s->soc = jz4740_init(PAVO_RAM_SIZE, PAVO_OSC_EXTAL);
     pavo_nand_setup(s);
     if (pavo_rom_emu(s)<0)
    	{
@@ -222,8 +222,6 @@ QEMUMachine mips_pavo_machine = {
     .name = "pavo",
     .desc = "JZ Pavo demo board",
     .init = mips_pavo_init,
-    .ram_require = (JZ4740_SRAM_SIZE + PAVO_RAM_SIZE) | RAMSIZE_FIXED,
-    .nodisk_ok = 1,
 };
 
 static void mips_pavo_machine_init(void)

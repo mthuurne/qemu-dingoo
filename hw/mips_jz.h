@@ -22,6 +22,7 @@
 #define _MIPS_JZ_H_
 
 #include "qemu-common.h"
+#include "targphys.h"
 
 
 
@@ -102,8 +103,6 @@
 
 
 
-#define JZ_FMT_plx "%llx"
-
 uint32_t jz4740_badwidth_read8(void *opaque, target_phys_addr_t addr);
 uint32_t jz4740_badwidth_read16(void *opaque, target_phys_addr_t addr);
 uint32_t jz4740_badwidth_read32(void *opaque, target_phys_addr_t addr);
@@ -118,19 +117,19 @@ void jz4740_badwidth_write32(void *opaque, target_phys_addr_t addr,
 
 #ifdef IO_ACCESS_VERBOSE
 #define JZ4740_8B_REG(paddr)		\
-        fprintf(stderr, "%s: 8-bit register " JZ_FMT_plx "\n",	\
+        fprintf(stderr, "%s: 8-bit register " TARGET_FMT_plx "\n",	\
                         __FUNCTION__, paddr)
 #define JZ4740_16B_REG(paddr)		\
-        fprintf(stderr, "%s: 16-bit register " JZ_FMT_plx "\n",	\
+        fprintf(stderr, "%s: 16-bit register " TARGET_FMT_plx "\n",	\
                         __FUNCTION__, paddr)
 #define JZ4740_32B_REG(paddr)		\
-        fprintf(stderr, "%s: 32-bit register " JZ_FMT_plx "\n",	\
+        fprintf(stderr, "%s: 32-bit register " TARGET_FMT_plx "\n",	\
                         __FUNCTION__, paddr)
 #define JZ4740_RO_REG(paddr)		\
-        fprintf(stderr, "%s: write to read only 32-bit register " JZ_FMT_plx "\n",	\
+        fprintf(stderr, "%s: write to read only 32-bit register " TARGET_FMT_plx "\n",	\
                         __FUNCTION__, paddr)
 #define JZ4740_WO_REG(paddr)		\
-        fprintf(stderr, "%s: read from write only 32-bit register " JZ_FMT_plx "\n",	\
+        fprintf(stderr, "%s: read from write only 32-bit register " TARGET_FMT_plx "\n",	\
                         __FUNCTION__, paddr)
 #else
 #define JZ4740_8B_REG(paddr)
@@ -177,7 +176,7 @@ void jz_clk_reparent(jz_clk clk, jz_clk parent);
 
 /*mips_jz.c*/
 struct jz_state_s *jz4740_init(unsigned long sdram_size,
-                                                              uint32_t osc_extal_freq,DisplayState * ds);
+                               uint32_t osc_extal_freq);
 
 enum jz_cpu_model {
         jz4740,

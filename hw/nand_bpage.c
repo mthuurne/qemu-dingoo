@@ -23,6 +23,7 @@
 #include "flash.h"
 #include "block.h"
 #include "blockdev.h"
+#include "osdep.h"
 
 
 #define MAX_PAGE		0x800
@@ -43,10 +44,12 @@ struct nand_flash_info_s
     int block_shift;
 };
 
-struct nand_flash_info_s nand_flash_info[2] =
+struct nand_flash_info_s nand_flash_info[] =
 {
-    {0x2c, 0xba, 256,2, 11, 6, 6},
-    {0Xec, 0xd3, 1024,1, 11, 6, 6}
+    { NAND_MFR_MICRON,  0xba,  256, 2, 11, 6, 6 },
+    { NAND_MFR_SAMSUNG, 0xd3, 1024, 1, 11, 6, 6 },
+    { NAND_MFR_SAMSUNG, 0xd5, 2048, 1, 12, 7, 7 },
+    { NAND_MFR_SAMSUNG, 0xd7, 4096, 1, 12, 7, 7 },
 };
 
 
@@ -433,7 +436,7 @@ struct nand_bflash_s *nandb_init(int manf_id, int chip_id)
     int i;
 
     s = (struct nand_bflash_s *) qemu_mallocz(sizeof(struct nand_bflash_s));
-    for (i = 0; i < sizeof(nand_flash_info); i++)
+    for (i = 0; i < ARRAY_SIZE(nand_flash_info); i++)
     {
         if ((nand_flash_info[i].manf_id == manf_id)
             && (nand_flash_info[i].chip_id == chip_id))
@@ -457,7 +460,7 @@ struct nand_bflash_s *nandb_init(int manf_id, int chip_id)
         }
 
     }
-    if (i >= sizeof(nand_flash_info))
+    if (i >= ARRAY_SIZE(nand_flash_info))
     {
         fprintf(stderr, "%s: Unsupported NAND chip ID.\n",
                   __FUNCTION__);

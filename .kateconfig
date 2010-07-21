@@ -1,0 +1,4 @@
+kate: tab-width 4;
+kate: indent-width 4;
+kate: replace-tabs on;
+kate: eol unix;

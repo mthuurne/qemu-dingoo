@@ -1,5 +1,5 @@
 /*
- * QEMU JZ Soc emulation
+ * QEMU JZ SoC emulation
  *
  * Copyright (c) 2009 yajin (yajin@vm-kernel.org)
  *
@@ -22,12 +22,6 @@
  * THE SOFTWARE.
  */
 
-
-/*
- * The emulation target is pavo demo board.
- *  http://www.ingenic.cn/eng/productServ/kfyd/Hardware/pffaqQuestionContent.aspx?Category=2&Question=3
- *
- */
 
 #include "hw.h"
 #include "mips.h"
@@ -62,8 +56,7 @@ FILE *fp;
 static void debug_init(void)
 {
     fp = fopen("jz4740.txt", "w+");
-    if (fp == NULL)
-    {
+    if (fp == NULL) {
         fprintf(stderr, "can not open jz4740.txt \n");
         exit(-1);
     }
@@ -71,10 +64,8 @@ static void debug_init(void)
 static void debug_out(uint32_t flag, const char *format, ...)
 {
     va_list ap;
-    if (fp)
-    {
-        if (flag & DEBUG_FLAG)
-        {
+    if (fp) {
+        if (flag & DEBUG_FLAG) {
             va_start(ap, format);
             vfprintf(fp, format, ap);
             fflush(fp);
@@ -238,8 +229,7 @@ static inline void jz4740_cppcr_update(struct jz4740_cpm_s *s,
 
     pllen = new_value & CPM_CPPCR_PLLEN;
     pllbp = new_value & CPM_CPPCR_PLLBP;
-    if ((!pllen) || (pllen && pllbp))
-    {
+    if ((!pllen) || (pllen && pllbp)) {
         jz_clk_setrate(jz_findclk(s->soc, "pll_output"), 1, 1);
         debug_out(DEBUG_CPM, "pll is bypassed \n");
         s->cppcr = new_value | CPM_CPPCR_PLLS;
@@ -326,8 +316,7 @@ static void jz4740_cpm_write(void *opaque, target_phys_addr_t addr,
 
     debug_out(DEBUG_CPM, "write to cpm addr " TARGET_FMT_plx " value 0x%x\n", addr, value);
 
-    switch (addr)
-    {
+    switch (addr) {
     case 0x0:
         jz4740_cpccr_update(s, value);
         break;
@@ -364,7 +353,7 @@ static void jz4740_cpm_write(void *opaque, target_phys_addr_t addr,
     default:
         cpu_abort(s->soc->env,
                   "jz4740_cpm_write undefined addr " TARGET_FMT_plx
-                  "  value %x \n", addr, value);
+                  " value %x \n", addr, value);
     }
 
 }
@@ -374,8 +363,7 @@ static uint32_t jz474_cpm_read(void *opaque, target_phys_addr_t addr)
 {
     struct jz4740_cpm_s *s = (struct jz4740_cpm_s *) opaque;
 
-    switch (addr)
-    {
+    switch (addr) {
     case 0x0:
         return s->cpccr;
     case 0x4:
@@ -400,7 +388,7 @@ static uint32_t jz474_cpm_read(void *opaque, target_phys_addr_t addr)
         return s->ssicdr;
     default:
         cpu_abort(s->soc->env,
-                  "jz474_cpm_read undefined addr " TARGET_FMT_plx "  \n", addr);
+                  "jz474_cpm_read undefined addr " TARGET_FMT_plx "\n", addr);
     }
 
 }
@@ -472,8 +460,7 @@ static uint32_t jz4740_intc_read(void *opaque, target_phys_addr_t addr)
 {
     struct jz4740_intc_s *s = (struct jz4740_intc_s *) opaque;
 
-    switch (addr)
-    {
+    switch (addr) {
     case 0x8:
     case 0xc:
         JZ4740_WO_REG(addr);
@@ -486,10 +473,9 @@ static uint32_t jz4740_intc_read(void *opaque, target_phys_addr_t addr)
         return s->icpr;
     default:
         cpu_abort(s->soc->env,
-                  "jz4740_intc_read undefined addr " TARGET_FMT_plx "  \n", addr);
-
+                  "jz4740_intc_read undefined addr " TARGET_FMT_plx "\n", addr);
     }
-    return (0);
+    return 0;
 }
 
 static void jz4740_intc_write(void *opaque, target_phys_addr_t addr,
@@ -497,8 +483,7 @@ static void jz4740_intc_write(void *opaque, target_phys_addr_t addr,
 {
     struct jz4740_intc_s *s = (struct jz4740_intc_s *) opaque;
 
-    switch (addr)
-    {
+    switch (addr) {
     case 0x0:
         JZ4740_RO_REG(addr);
         break;
@@ -518,7 +503,7 @@ static void jz4740_intc_write(void *opaque, target_phys_addr_t addr,
     default:
         cpu_abort(s->soc->env,
                   "jz4740_intc_write undefined addr " TARGET_FMT_plx
-                  "  value %x \n", addr, value);
+                  " value %x \n", addr, value);
     }
 }
 
@@ -547,18 +532,14 @@ static void jz4740_set_irq(void *opaque, int irq, int level)
     struct jz4740_intc_s *s = (struct jz4740_intc_s *) opaque;
     uint32_t irq_mask = 1 << irq;
 
-
-    if (level)
-    {
+    if (level) {
         s->icsr |= irq_mask;
         s->icpr &= ~irq_mask;
-        if (!(s->icmr & irq_mask))
-        {
+        if (!(s->icmr & irq_mask)) {
             s->icpr |= irq_mask;
             qemu_set_irq(s->parent_irq, 1);
         }
     }
-
 }
 
 static qemu_irq *jz4740_intc_init(struct jz_state_s *soc, qemu_irq parent_irq)
@@ -654,8 +635,7 @@ static uint32_t jz4740_emc_read8(void *opaque, target_phys_addr_t addr)
 {
     struct jz4740_emc_s *s = (struct jz4740_emc_s *) opaque;
 
-    switch (addr)
-    {
+    switch (addr) {
     case 0x108:
     case 0x109:
     case 0x10a:
@@ -682,15 +662,14 @@ static uint32_t jz4740_emc_read8(void *opaque, target_phys_addr_t addr)
 
 
     }
-    return (0);
+    return 0;
 }
 
 static uint32_t jz4740_emc_read16(void *opaque, target_phys_addr_t addr)
 {
     struct jz4740_emc_s *s = (struct jz4740_emc_s *) opaque;
 
-    switch (addr)
-    {
+    switch (addr) {
     case 0x108:
     case 0x10a:
         return (s->nfpar0 >> ((addr - 0x108) * 8)) & 0xffff;
@@ -714,17 +693,17 @@ static uint32_t jz4740_emc_read16(void *opaque, target_phys_addr_t addr)
         return (s->nferr3 >> ((addr - 0x128) * 8)) & 0xffff;
     default:
         cpu_abort(s->soc->env,
-                  "jz4740_emc_read16 undefined addr " TARGET_FMT_plx " \n", addr);
+                  "jz4740_emc_read16 undefined addr " TARGET_FMT_plx " \n",
+                  addr);
     }
-    return (0);
+    return 0;
 }
 
 static uint32_t jz4740_emc_read32(void *opaque, target_phys_addr_t addr)
 {
     struct jz4740_emc_s *s = (struct jz4740_emc_s *) opaque;
 
-    switch (addr)
-    {
+    switch (addr) {
     case 0x0:
         return s->bcr;
     case 0x14:
@@ -773,9 +752,10 @@ static uint32_t jz4740_emc_read32(void *opaque, target_phys_addr_t addr)
         return s->dmar;
     default:
         cpu_abort(s->soc->env,
-                  "jz4740_emc_read32 undefined addr " TARGET_FMT_plx " \n", addr);
+                  "jz4740_emc_read32 undefined addr " TARGET_FMT_plx " \n",
+                  addr);
     }
-    return (0);
+    return 0;
 }
 
 static void jz4740_emc_write8(void *opaque, target_phys_addr_t addr,
@@ -783,10 +763,11 @@ static void jz4740_emc_write8(void *opaque, target_phys_addr_t addr,
 {
     struct jz4740_emc_s *s = (struct jz4740_emc_s *) opaque;
 
-    debug_out(DEBUG_EMC, "jz4740_emc_write8 addr "TARGET_FMT_plx"  value %x\n", addr, value);
+    debug_out(DEBUG_EMC,
+              "jz4740_emc_write8 addr " TARGET_FMT_plx " value %x\n",
+              addr, value);
 
-    switch (addr)
-    {
+    switch (addr) {
     case 0x108:
     case 0x109:
     case 0x10a:
@@ -810,7 +791,7 @@ static void jz4740_emc_write8(void *opaque, target_phys_addr_t addr,
     default:
         cpu_abort(s->soc->env,
                   "jz4740_emc_write8 undefined addr " TARGET_FMT_plx
-                  "  value %x \n", addr, value);
+                  " value %x \n", addr, value);
     }
 }
 static void jz4740_emc_write16(void *opaque, target_phys_addr_t addr,
@@ -818,9 +799,11 @@ static void jz4740_emc_write16(void *opaque, target_phys_addr_t addr,
 {
     struct jz4740_emc_s *s = (struct jz4740_emc_s *) opaque;
 
-    debug_out(DEBUG_EMC, "jz4740_emc_write16 addr "TARGET_FMT_plx"  value %x\n", addr, value);
-    switch (addr)
-    {
+    debug_out(DEBUG_EMC,
+              "jz4740_emc_write16 addr "TARGET_FMT_plx" value %x\n",
+              addr, value);
+
+    switch (addr) {
     case 0x108:
     case 0x10a:
         s->nfpar0 |= (value & 0xffff) << ((addr - 0x108) * 8);
@@ -847,7 +830,7 @@ static void jz4740_emc_write16(void *opaque, target_phys_addr_t addr,
     default:
         cpu_abort(s->soc->env,
                   "jz4740_emc_write16 undefined addr " TARGET_FMT_plx
-                  "  value %x \n", addr, value);
+                  " value %x \n", addr, value);
     }
 }
 
@@ -861,9 +844,11 @@ static void jz4740_emc_write32(void *opaque, target_phys_addr_t addr,
 {
     struct jz4740_emc_s *s = (struct jz4740_emc_s *) opaque;
 
-    debug_out(DEBUG_EMC, "jz4740_emc_write32 addr " TARGET_FMT_plx " value %x\n", addr, value);
-    switch (addr)
-    {
+    debug_out(DEBUG_EMC,
+              "jz4740_emc_write32 addr " TARGET_FMT_plx " value %x\n",
+              addr, value);
+
+    switch (addr) {
     case 0x104:
     case 0x11c:
     case 0x120:
@@ -903,8 +888,7 @@ static void jz4740_emc_write32(void *opaque, target_phys_addr_t addr,
         break;
     case 0x100:
         s->nfeccr = value & 0x1f;
-        if (s->nfeccr & 0x2)
-        {
+        if (s->nfeccr & 0x2) {
             s->nfecc = 0x0;
             s->nfpar0 = 0x0;
             s->nfpar1 = 0x0;
@@ -916,29 +900,24 @@ static void jz4740_emc_write32(void *opaque, target_phys_addr_t addr,
             s->nferr2 = 0x0;
             s->nferr3 = 0x0;
         }
-         /*RS*/
-            /*TODO: Real RS error correction */
-            if (s->nfeccr & 0x4)
-        {
-            if ((s->nfeccr & 0x10) && (!(s->nfeccr & 0x8)))
-            {
+        /*RS*/
+        /*TODO: Real RS error correction */
+        if (s->nfeccr & 0x4) {
+            if ((s->nfeccr & 0x10) && (!(s->nfeccr & 0x8))) {
                 /*decode */
                 s->nfints = 0x8;
                 s->nferr0 = 0x0;
                 s->nferr1 = 0x0;
                 s->nferr2 = 0x0;
             }
-            if (s->nfeccr & 0x8)
-            {
+            if (s->nfeccr & 0x8) {
                 /*encoding */
                 s->nfints = 0x4;
                 s->nfpar0 = 0xffffffff; /*fake value. for debug */
                 s->nfpar1 = 0xffffffff; /*fake value */
                 s->nfpar2 = 0xff;       /*fake value */
             }
-        }
-        else
-        {
+        } else {
             s->nfecc = 0xffffff;
         }
         jz4740_emc_upate_interrupt(s);
@@ -969,7 +948,7 @@ static void jz4740_emc_write32(void *opaque, target_phys_addr_t addr,
     default:
         cpu_abort(s->soc->env,
                   "jz4740_emc_write32 undefined addr " TARGET_FMT_plx
-                  "  value %x \n", addr, value);
+                  " value %x \n", addr, value);
 
     }
 
@@ -1042,8 +1021,7 @@ static uint32_t jz4740_gpio_read(void *opaque, target_phys_addr_t addr)
     uint32_t group;
     debug_out(DEBUG_GPIO, "jz4740_gpio_read addr %x\n", addr);
 
-    switch (addr)
-    {
+    switch (addr) {
     case 0x14:
     case 0x114:
     case 0x214:
@@ -1112,8 +1090,7 @@ static uint32_t jz4740_gpio_read(void *opaque, target_phys_addr_t addr)
     case 0x200:
     case 0x300:
         group = (addr - 0x0) / 0x100;
-        if (addr == 0x200)
-        {
+        if (addr == 0x200) {
             /*GPIO(C) PIN 30  -> NAND FLASH R/B. */
             /*FOR NAND FLASH.PIN 30 ----|_____|------ */
             s->papin[2] &= 0x40000000;
@@ -1175,7 +1152,7 @@ static uint32_t jz4740_gpio_read(void *opaque, target_phys_addr_t addr)
         cpu_abort(s->soc->env,
                   "jz4740_gpio_read undefined addr " TARGET_FMT_plx " \n", addr);
     }
-    return (0);
+    return 0;
 }
 
 static void jz4740_gpio_write(void *opaque, target_phys_addr_t addr,
@@ -1184,10 +1161,11 @@ static void jz4740_gpio_write(void *opaque, target_phys_addr_t addr,
     struct jz4740_gpio_s *s = (struct jz4740_gpio_s *) opaque;
     uint32_t group;
 
-    debug_out(DEBUG_GPIO, "jz4740_gpio_write addr " TARGET_FMT_plx "  value %x\n", addr, value);
+    debug_out(DEBUG_GPIO,
+              "jz4740_gpio_write addr " TARGET_FMT_plx " value %x\n",
+              addr, value);
 
-    switch (addr)
-    {
+    switch (addr) {
     case 0x0:
     case 0x100:
     case 0x200:
@@ -1334,11 +1312,8 @@ static void jz4740_gpio_write(void *opaque, target_phys_addr_t addr,
     default:
         cpu_abort(s->soc->env,
                   "jz4740_gpio_write undefined addr " TARGET_FMT_plx
-                  "  value %x \n", addr, value);
-
+                  " value %x \n", addr, value);
     }
-
-
 }
 
 
@@ -1400,17 +1375,15 @@ struct jz4740_rtc_s
 
 static void jz4740_rtc_update_interrupt(struct jz4740_rtc_s *s)
 {
-	if (!s->rtcsr&0x1)
-		return;
-
-    if (((s->rtccr & 0x40) && (s->rtccr & 0x20))
-        || ((s->rtccr & 0x10) && (s->rtccr & 0x8)))
-    {
-    	debug_out(DEBUG_RTC,"s->rtccr %x \n",s->rtcsr);
-    	qemu_set_irq(s->irq, 1);
+    if (!s->rtcsr&0x1) {
+        return;
     }
 
-
+    if (((s->rtccr & 0x40) && (s->rtccr & 0x20))
+    || ((s->rtccr & 0x10) && (s->rtccr & 0x8))) {
+        debug_out(DEBUG_RTC,"s->rtccr %x \n",s->rtcsr);
+        qemu_set_irq(s->irq, 1);
+    }
 }
 
 static inline void jz4740_rtc_start(struct jz4740_rtc_s *s)
@@ -1423,8 +1396,9 @@ static inline void jz4740_rtc_stop(struct jz4740_rtc_s *s)
 {
     qemu_del_timer(s->hz_tm);
     s->next = -qemu_get_clock(rt_clock);
-    if (s->next < 1)
+    if (s->next < 1) {
         s->next = 1;
+    }
 }
 
 static void jz4740_rtc_hz(void *opaque)
@@ -1433,14 +1407,13 @@ static void jz4740_rtc_hz(void *opaque)
 
     s->next += 1000;
     qemu_mod_timer(s->hz_tm, s->next);
-    if (s->rtccr & 0x1)
-    {
+    if (s->rtccr & 0x1) {
         s->rtcsr++;
         s->rtccr |= 0x40;
-        if (s->rtcsr & 0x4)
-        {
-            if (s->rtcsr == s->rtcsar)
+        if (s->rtcsr & 0x4) {
+            if (s->rtcsr == s->rtcsar) {
                 s->rtccr |= 0x10;
+            }
         }
         jz4740_rtc_update_interrupt(s);
     }
@@ -1463,8 +1436,7 @@ static uint32_t jz4740_rtc_read(void *opaque, target_phys_addr_t addr)
     struct jz4740_rtc_s *s = (struct jz4740_rtc_s *) opaque;
 
     debug_out(DEBUG_RTC, "jz4740_rtc_read addr %x\n", addr);
-    switch (addr)
-    {
+    switch (addr) {
     case 0x0:
         return s->rtccr | 0x80;
     case 0x4:
@@ -1490,7 +1462,7 @@ static uint32_t jz4740_rtc_read(void *opaque, target_phys_addr_t addr)
                   "jz4740_rtc_read undefined addr " TARGET_FMT_plx "\n", addr);
     }
 
-    return (0);
+    return 0;
 }
 
 static void jz4740_rtc_write(void *opaque, target_phys_addr_t addr,
@@ -1498,22 +1470,24 @@ static void jz4740_rtc_write(void *opaque, target_phys_addr_t addr,
 {
     struct jz4740_rtc_s *s = (struct jz4740_rtc_s *) opaque;
 
-    debug_out(DEBUG_RTC, "jz4740_rtc_write addr " TARGET_FMT_plx " value %x\n", addr, value);
+    debug_out(DEBUG_RTC,
+              "jz4740_rtc_write addr " TARGET_FMT_plx " value %x\n",
+              addr, value);
 
-    switch (addr)
-    {
+    switch (addr) {
     case 0x0:
         s->rtccr = value & 0x7d;
-        if (~value & 0x40)
+        if (~value & 0x40) {
             s->rtccr &= ~0x40;
-        if (~value & 0x10)
-            s->rtccr &= ~0x10;
-        if (s->rtccr & 0x1)
-        {
-            jz4740_rtc_start(s);
         }
-        else
-        	jz4740_rtc_stop(s);
+        if (~value & 0x10) {
+            s->rtccr &= ~0x10;
+        }
+        if (s->rtccr & 0x1) {
+            jz4740_rtc_start(s);
+        } else {
+            jz4740_rtc_stop(s);
+        }
         break;
     case 0x4:
         s->rtcsr = value;
@@ -1545,7 +1519,7 @@ static void jz4740_rtc_write(void *opaque, target_phys_addr_t addr,
     default:
         cpu_abort(s->soc->env,
                   "jz4740_rtc_write undefined addr " TARGET_FMT_plx
-                  "  value %x \n", addr, value);
+                  " value %x \n", addr, value);
     }
 
 }
@@ -1613,28 +1587,25 @@ static void jz4740_tcu_update_interrupt(struct jz4740_tcu_s *s)
 {
     //printf("s->tfr %x s->tmr %x \n",s->tfr,s->tmr);
     if (((s->tfr & 0x1) & (~(s->tmr & 0x1)))
-        || ((s->tfr & 0x10000) & (~(s->tmr & 0x10000))))
-    {
+     || ((s->tfr & 0x10000) & (~(s->tmr & 0x10000)))) {
         qemu_set_irq(s->tcu_irq0, 1);
-    }
-    else
+    } else {
         qemu_set_irq(s->tcu_irq0, 0);
+    }
 
     if (((s->tfr & 0x2) & (~(s->tmr & 0x2)))
-        || ((s->tfr & 0x20000) & (~(s->tmr & 0x20000))))
-    {
+     || ((s->tfr & 0x20000) & (~(s->tmr & 0x20000)))) {
         qemu_set_irq(s->tcu_irq1, 1);
-    }
-    else
+    } else {
         qemu_set_irq(s->tcu_irq1, 0);
+    }
 
     if (((s->tfr & 0xfc) & (~(s->tmr & 0xfc)))
-        || ((s->tfr & 0xfc0000) & (~(s->tmr & 0xfc0000))))
-    {
+     || ((s->tfr & 0xfc0000) & (~(s->tmr & 0xfc0000)))) {
         qemu_set_irq(s->tcu_irq2, 1);
-    }
-    else
+    } else {
         qemu_set_irq(s->tcu_irq2, 0);
+    }
 
 }
 
@@ -1657,24 +1628,24 @@ static void jz4740_tcu_update_interrupt(struct jz4740_tcu_s *s)
 #include "mips_jz_glue.h"
 #undef TCU_INDEX
 
-#define  jz4740_tcu_start(s) do {        \
-	jz4740_tcu_start_half0(s);              \
-	jz4740_tcu_start_full0(s);    \
-	jz4740_tcu_start_half1(s); \
-	jz4740_tcu_start_full1(s); \
-	jz4740_tcu_start_half2(s); \
-	jz4740_tcu_start_full2(s); \
-	jz4740_tcu_start_half3(s); \
-	jz4740_tcu_start_full3(s); \
-	jz4740_tcu_start_half4(s); \
-	jz4740_tcu_start_full4(s); \
-	jz4740_tcu_start_half5(s); \
-	jz4740_tcu_start_full5(s); \
-	jz4740_tcu_start_half6(s); \
-	jz4740_tcu_start_full6(s); \
-	jz4740_tcu_start_half7(s); \
-	jz4740_tcu_start_full7(s); \
-}while (0)
+#define jz4740_tcu_start(s) do { \
+    jz4740_tcu_start_half0(s); \
+    jz4740_tcu_start_full0(s); \
+    jz4740_tcu_start_half1(s); \
+    jz4740_tcu_start_full1(s); \
+    jz4740_tcu_start_half2(s); \
+    jz4740_tcu_start_full2(s); \
+    jz4740_tcu_start_half3(s); \
+    jz4740_tcu_start_full3(s); \
+    jz4740_tcu_start_half4(s); \
+    jz4740_tcu_start_full4(s); \
+    jz4740_tcu_start_half5(s); \
+    jz4740_tcu_start_full5(s); \
+    jz4740_tcu_start_half6(s); \
+    jz4740_tcu_start_full6(s); \
+    jz4740_tcu_start_half7(s); \
+    jz4740_tcu_start_full7(s); \
+} while (0)
 
 static void jz4740_tcu_if_reset(struct jz4740_tcu_s *s)
 {
@@ -1684,8 +1655,7 @@ static void jz4740_tcu_if_reset(struct jz4740_tcu_s *s)
     s->ter = 0x0;
     s->tfr = 0x0;
     s->tmr = 0x0;
-    for (i = 0; i < 8; i++)
-    {
+    for (i = 0; i < 8; i++) {
         s->tdfr[i] = 0xffff;
         s->tdhr[i] = 0x8000;
         s->tcnt[i] = 0x0;
@@ -1703,8 +1673,7 @@ static void jz4740_tcu_if_write8(void *opaque, target_phys_addr_t addr,
     debug_out(DEBUG_TCU, "jz4740_tcu_if_write8 addr %x value %x\n", addr,
               value);
 
-    switch (addr)
-    {
+    switch (addr) {
     case 0x14:
         s->ter |= (value & 0xff);
         jz4740_tcu_start(s);
@@ -1726,11 +1695,11 @@ static void jz4740_tcu_if_write32(void *opaque, target_phys_addr_t addr,
 {
     struct jz4740_tcu_s *s = (struct jz4740_tcu_s *) opaque;
 
-    debug_out(DEBUG_TCU, "jz4740_tcu_if_write32 addr %x value %x\n", addr,
-              value);
+    debug_out(DEBUG_TCU,
+              "jz4740_tcu_if_write32 addr %x value %x\n",
+              addr, value);
 
-    switch (addr)
-    {
+    switch (addr) {
     case 0x2c:
         s->tsr |= (value & 0x100ff);
         jz4740_tcu_start(s);
@@ -1767,15 +1736,15 @@ static uint32_t jz4740_tcu_if_read8(void *opaque, target_phys_addr_t addr)
 
     debug_out(DEBUG_TCU, "jz4740_tcu_if_read8 addr %x\n", addr);
 
-    switch (addr)
-    {
+    switch (addr) {
     case 0x10:
         return s->ter;
     default:
         cpu_abort(s->soc->env,
-                  "jz4740_tcu_if_read8 undefined addr " TARGET_FMT_plx "\n", addr);
+                  "jz4740_tcu_if_read8 undefined addr " TARGET_FMT_plx "\n",
+                  addr);
     }
-    return (0);
+    return 0;
 }
 
 static uint32_t jz4740_tcu_if_read32(void *opaque, target_phys_addr_t addr)
@@ -1784,8 +1753,7 @@ static uint32_t jz4740_tcu_if_read32(void *opaque, target_phys_addr_t addr)
 
     debug_out(DEBUG_TCU, "jz4740_tcu_if_read32 addr %x\n", addr);
 
-    switch (addr)
-    {
+    switch (addr) {
     case 0x1c:
         return s->tsr;
     case 0x20:
@@ -1794,10 +1762,11 @@ static uint32_t jz4740_tcu_if_read32(void *opaque, target_phys_addr_t addr)
         return s->tmr;
     default:
         cpu_abort(s->soc->env,
-                  "jz4740_tcu_if_read32 undefined addr " TARGET_FMT_plx "\n", addr);
+                  "jz4740_tcu_if_read32 undefined addr " TARGET_FMT_plx "\n",
+                  addr);
 
     }
-    return (0);
+    return 0;
 
 }
 
@@ -1840,8 +1809,7 @@ static struct jz4740_tcu_s *jz4740_tcu_if_init(struct jz_state_s *soc,
 static void jz4740_tcu_init(struct jz_state_s *soc,
                             struct jz4740_tcu_s *s, int timer_index)
 {
-    switch (timer_index)
-    {
+    switch (timer_index) {
     case 0x0:
         jz4740_tcu_init0(soc, s);
         break;
@@ -1942,8 +1910,7 @@ static uint32_t jz4740_lcdc_read(void *opaque, target_phys_addr_t addr)
     struct jz4740_lcdc_s *s = (struct jz4740_lcdc_s *) opaque;
 
     debug_out(DEBUG_LCDC, "jz4740_lcdc_read addr %x \n", addr);
-    switch (addr)
-    {
+    switch (addr) {
     case 0x0:
         return s->lcdcfg;
     case 0x4:
@@ -2001,8 +1968,7 @@ static void jz4740_lcdc_write(void *opaque, target_phys_addr_t addr,
 
     debug_out(DEBUG_LCDC, "jz4740_lcdc_write addr "TARGET_FMT_plx" value %x\n", addr, value);
 
-    switch (addr)
-    {
+    switch (addr) {
     case 0x44:
     case 0x48:
     case 0x4c:
@@ -2045,9 +2011,8 @@ static void jz4740_lcdc_write(void *opaque, target_phys_addr_t addr,
         s->ena = (value & 0x8) >> 3;
         s->dis = (value & 0x10) >> 4;
         s->bpp = jz4740_lcd_bpp[value & 0x7];
-        if ((s->bpp == 1))
-        {
-            fprintf(stderr, "bpp =1 is not supported\n");
+        if (s->bpp == 1) {
+            fprintf(stderr, "bpp=1 is not supported\n");
             exit(-1);
         }
         s->line_fn = s->line_fn_tab[value & 0x7];
@@ -2066,8 +2031,8 @@ static void jz4740_lcdc_write(void *opaque, target_phys_addr_t addr,
         break;
     default:
         cpu_abort(s->soc->env,
-                  "jz4740_lcdc_write undefined addr " TARGET_FMT_plx " value %x \n",
-                  addr, value);
+                  "jz4740_lcdc_write undefined addr " TARGET_FMT_plx
+                  " value %x \n", addr, value);
     }
 
 }
@@ -2139,8 +2104,7 @@ static void jz4740_lcd_update_display(void *opaque)
     s->lcdcmd0 = fb_des->ldcmd;
 
     src = (uint8_t *) jz4740_lcd_get_buffer(s, fb_des->fsadr);
-    if (s->lcdcmd0 & (0x1 << 28))
-    {
+    if (s->lcdcmd0 & (0x1 << 28)) {
         /*palette */
         memcpy(s->palette, src, sizeof(s->palette));
         return;
@@ -2148,9 +2112,8 @@ static void jz4740_lcd_update_display(void *opaque)
 
     /*frame buffer */
 
-    if (s->width != ds_get_width(s->state) ||
-        s->height != ds_get_height(s->state))
-    {
+    if (s->width != ds_get_width(s->state)
+     || s->height != ds_get_height(s->state)) {
         qemu_console_resize(s->state, s->width, s->height);
         s->invalidate = 1;
     }
@@ -2159,21 +2122,21 @@ static void jz4740_lcd_update_display(void *opaque)
     dest = ds_get_data(s->state);
     linesize = ds_get_linesize(s->state);
 
-    //printf("s->width %d s->height  %d s->bpp %d linesize %d \n",s->width,s->height ,s->bpp,linesize);
+    //printf("s->width %d s->height  %d s->bpp %d linesize %d \n",
+    //       s->width,s->height ,s->bpp,linesize);
 
-    for (y = 0; y < s->height; y++)
-    {
+    for (y = 0; y < s->height; y++) {
         s->line_fn(dest, src, s->width, s->palette);
         //memcpy(dest,src,step);
         src += step;
         dest += linesize;
     }
 
-
     dpy_update(s->state, 0, 0, s->width, s->height);
     s->lcdstate |= 0x20;
-    if ((s->lcdcmd0 & 0x40000000) && (!(s->lcdctrl & 0x2000)))
+    if ((s->lcdcmd0 & 0x40000000) && (!(s->lcdctrl & 0x2000))) {
         qemu_set_irq(s->irq, 1);
+    }
 }
 
 static inline void jz4740_lcd_invalidate_display(void *opaque)
@@ -2201,8 +2164,7 @@ static struct jz4740_lcdc_s *jz4740_lcdc_init(struct jz_state_s *soc,
     s->state = graphic_console_init(jz4740_lcd_update_display,
                                     jz4740_lcd_invalidate_display,
                                     NULL, NULL, s);
-    switch (ds_get_bits_per_pixel(s->state))
-    {
+    switch (ds_get_bits_per_pixel(s->state)) {
     case 0x0:
         s->line_fn_tab = qemu_mallocz(sizeof(jz4740_lcd_fn_t) * 6);
         break;
@@ -2292,8 +2254,7 @@ static inline void jz4740_dma_transfer(struct jz4740_dma_s *s,
 static inline uint32_t jz4740_dma_unit_size(struct jz4740_dma_s *s,
                                             uint32_t cmd)
 {
-    switch ((cmd & 0x700) >> 8)
-    {
+    switch ((cmd & 0x700) >> 8) {
     case 0x0:
         return 4;
     case 0x1:
@@ -2305,7 +2266,7 @@ static inline uint32_t jz4740_dma_unit_size(struct jz4740_dma_s *s,
     case 0x4:
         return 32;
     }
-    return (0);
+    return 0;
 }
 
 
@@ -2359,10 +2320,8 @@ static inline void jz4740_dma_drun(struct jz4740_dma_s *s, int channel)
         cpu_abort(cpu_single_env,
                   "%s: DMA descriptor is NULL!\n", __FUNCTION__);
 
-    while (1)
-    {
-        if ((desc->dcmd & 0x8) && (!(desc->dcmd & 0x10)))
-        {
+    while (1) {
+        if ((desc->dcmd & 0x8) && (!(desc->dcmd & 0x10))) {
             /*Stop DMA and set DCSN.INV=1 */
             s->dcs[channel] |= 1 << 6;
             return;
@@ -2371,38 +2330,40 @@ static inline void jz4740_dma_drun(struct jz4740_dma_s *s, int channel)
                             (desc->ddadr & 0xffffff) *
                             jz4740_dma_unit_size(s, desc->dcmd));
 
-        if ((desc->dcmd) & (1 << 3))
+        if ((desc->dcmd) & (1 << 3)) {
             /*clear v */
             desc->dcmd &= ~(1 << 4);
-        if (desc->dcmd & 0x1)
+        }
+        if (desc->dcmd & 0x1) {
             /*set DCSN.CT=1 */
             s->dcs[channel] |= 0x2;
-        else
+        } else {
             /*set DCSN.TT=1 */
             s->dcs[channel] |= 0x8;
+        }
 
-        if (desc->dcmd & 0x2)
+        if (desc->dcmd & 0x2) {
             qemu_set_irq(s->irq, 1);
+        }
 
-        if ((desc->dcmd) & 0x1)
-        {
+        if ((desc->dcmd) & 0x1) {
             /*fetch next descriptor */
             desc_phy = s->dda[channel] & 0xfffff000;
             desc_phy += (desc->dtadr & 0xff000000) >> 24;
             pd = cpu_get_physical_page_desc(desc_phy);
-            if ((pd & ~TARGET_PAGE_MASK) != IO_MEM_RAM)
+            if ((pd & ~TARGET_PAGE_MASK) != IO_MEM_RAM) {
                 cpu_abort(cpu_single_env,
                           "%s: DMA descriptor address " TARGET_FMT_plx " outside RAM!\n",
                           __FUNCTION__, desc_phy);
-            else
-                desc = (struct jz4740_desc_s *) qemu_get_ram_ptr(
-                                                 (pd & TARGET_PAGE_MASK)
-                                                 +
-                                                 (desc_phy &
-                                                  ~TARGET_PAGE_MASK));
-            if (!desc)
+            } else {
+                desc = (struct jz4740_desc_s *)
+                       qemu_get_ram_ptr((pd & TARGET_PAGE_MASK) +
+                                        (desc_phy & ~TARGET_PAGE_MASK));
+            }
+            if (!desc) {
                 cpu_abort(cpu_single_env,
                           "%s: DMA descriptor is NULL!\n", __FUNCTION__);
+            }
         }
         else
             break;
@@ -2411,10 +2372,8 @@ static inline void jz4740_dma_drun(struct jz4740_dma_s *s, int channel)
 
 static void jz4740_dma_en_channel(struct jz4740_dma_s *s, int channel)
 {
-    if (s->dmac & 0x1)
-    {
-        if (s->dcs[channel] & (1 << 31))
-        {
+    if (s->dmac & 0x1) {
+        if (s->dcs[channel] & (1 << 31)) {
             /*NON DESCRIPTOR */
             jz4740_dma_ndrun(s, channel);
         }
@@ -2424,16 +2383,14 @@ static void jz4740_dma_en_channel(struct jz4740_dma_s *s, int channel)
 static inline void jz4740_dma_en_global(struct jz4740_dma_s *s)
 {
     int channel;
-    for (channel = 0; channel < JZ4740_DMA_NUM; channel++)
-    {
+    for (channel = 0; channel < JZ4740_DMA_NUM; channel++) {
         jz4740_dma_en_channel(s, channel);
     }
 }
 
 static inline void jz4740_dma_en_dbn(struct jz4740_dma_s *s, int channel)
 {
-    if ((s->dmac & 0x1) && (s->dcs[channel] & (1 << 31)))
-    {
+    if ((s->dmac & 0x1) && (s->dcs[channel] & (1 << 31))) {
         jz4740_dma_drun(s, channel);
     }
 }
@@ -2449,8 +2406,7 @@ static uint32_t jz4740_dma_read(void *opaque, target_phys_addr_t addr)
     int channel;
 
     debug_out(DEBUG_DMA, "jz4740_dma_read addr %x \n", addr);
-    switch (addr)
-    {
+    switch (addr) {
     case 0x300:
         return s->dmac;
     case 0x304:
@@ -2515,9 +2471,10 @@ static uint32_t jz4740_dma_read(void *opaque, target_phys_addr_t addr)
         return s->dda[channel];
     default:
         cpu_abort(s->soc->env,
-                  "jz4740_dma_read undefined addr " TARGET_FMT_plx "  \n", addr);
+                  "jz4740_dma_read undefined addr " TARGET_FMT_plx "\n",
+                  addr);
     }
-    return (0);
+    return 0;
 }
 
 static void jz4740_dma_write(void *opaque, target_phys_addr_t addr,
@@ -2526,9 +2483,10 @@ static void jz4740_dma_write(void *opaque, target_phys_addr_t addr,
     struct jz4740_dma_s *s = (struct jz4740_dma_s *) opaque;
     int channel;
 
-    debug_out(DEBUG_DMA, "jz4740_dma_write addr " TARGET_FMT_plx "  value %x \n", addr, value);
-    switch (addr)
-    {
+    debug_out(DEBUG_DMA,
+              "jz4740_dma_write addr " TARGET_FMT_plx " value %x \n",
+              addr, value);
+    switch (addr) {
     case 0x304:
         JZ4740_RO_REG(addr);
         break;
@@ -2540,10 +2498,8 @@ static void jz4740_dma_write(void *opaque, target_phys_addr_t addr,
     case 0x308:
     case 0x30c:
         s->ddr = value & 0xff;
-        for (channel = 0; channel < JZ4740_DMA_NUM; channel++)
-        {
-            if (s->ddr & (1 << channel))
-            {
+        for (channel = 0; channel < JZ4740_DMA_NUM; channel++) {
+            if (s->ddr & (1 << channel)) {
                 jz4740_dma_en_dbn(s, channel);
                 break;
             }
@@ -2584,8 +2540,7 @@ static void jz4740_dma_write(void *opaque, target_phys_addr_t addr,
     case 0xac:
         channel = (addr - 0xc) / 0x20;
         s->drs[channel] = value & 0x10;
-        if (s->drs[channel] != 0x8)
-        {
+        if (s->drs[channel] != 0x8) {
             fprintf(stderr, "Only auto request is supproted \n");
         }
         break;
@@ -2620,7 +2575,7 @@ static void jz4740_dma_write(void *opaque, target_phys_addr_t addr,
         break;
     default:
         cpu_abort(s->soc->env,
-                  "jz4740_dma_read undefined addr " TARGET_FMT_plx "  \n", addr);
+                  "jz4740_dma_read undefined addr " TARGET_FMT_plx "\n", addr);
     }
 
 }
@@ -2676,7 +2631,7 @@ struct jz4740_sadc_s
     uint32_t adsdat;
     uint32_t addpin;
 
-	uint8_t tchen;
+    uint8_t tchen;
     uint8_t ex_in;
     uint8_t xyz;
     uint8_t snum;
@@ -2692,15 +2647,15 @@ struct jz4740_sadc_s
 
 static void jz4740_touchscreen_interrupt(struct jz4740_sadc_s *s)
 {
-    if (!s->tchen)
-    	return;
-
-    if ((s->adctrl)&(s->adstate))
-    {
-    	debug_out(DEBUG_SADC,"irq s->adctrl %x s->adstate %x \n",s->adctrl,s->adstate);
-    	qemu_set_irq(s->irq,1);
+    if (!s->tchen) {
+        return;
     }
 
+    if ((s->adctrl)&(s->adstate)) {
+        debug_out(DEBUG_SADC,"irq s->adctrl %x s->adstate %x\n",
+                  s->adctrl, s->adstate);
+        qemu_set_irq(s->irq,1);
+    }
 }
 
 static void jz4740_touchscreen_event(void *opaque,
@@ -2708,90 +2663,84 @@ static void jz4740_touchscreen_event(void *opaque,
 {
     struct jz4740_sadc_s *s = opaque;
 
-    if (!s->tchen)
-    	return;
+    if (!s->tchen) {
+        return;
+    }
 
     s->x = (x*4096)/0x7FFF;
     s->y = (y*4096)/0x7FFF;
 
-	if ((s->pen_state == PEN_UP)&&(buttons_state==PEN_DOWN))
-	{
-		 s->adstate |= 0x14;
-		jz4740_touchscreen_interrupt(s);
-	}
-	else if ((s->pen_state == PEN_DOWN)&&(buttons_state==PEN_UP))
-	{
-		s->adstate |= 0xc;
-	   jz4740_touchscreen_interrupt(s);
-	}
-	s->pen_state = buttons_state;
-
+    if ((s->pen_state == PEN_UP)&&(buttons_state==PEN_DOWN)) {
+        s->adstate |= 0x14;
+        jz4740_touchscreen_interrupt(s);
+    } else if ((s->pen_state == PEN_DOWN)&&(buttons_state==PEN_UP)) {
+        s->adstate |= 0xc;
+        jz4740_touchscreen_interrupt(s);
+    }
+    s->pen_state = buttons_state;
 }
 
 static uint32_t jz4740_sadc_read8(void *opaque, target_phys_addr_t addr)
 {
     struct jz4740_sadc_s *s = (struct jz4740_sadc_s *) opaque;
 
-    switch (addr)
-    {
-    	case 0x0:
-    		return s->adena;
-    	case 0x8:
-    		return s->adctrl;
-    	case 0xc:
-    		return s->adstate;
+    switch (addr) {
+    case 0x0:
+        return s->adena;
+    case 0x8:
+        return s->adctrl;
+    case 0xc:
+        return s->adstate;
     default:
         cpu_abort(s->soc->env,
-                  "jz4740_sadc_read8 undefined addr " TARGET_FMT_plx "  \n", addr);
+                  "jz4740_sadc_read8 undefined addr " TARGET_FMT_plx "\n",
+                  addr);
     }
-    return (0);
+    return 0;
 }
 
 static uint32_t jz4740_sdac_read16(void *opaque, target_phys_addr_t addr)
 {
     struct jz4740_sadc_s *s = (struct jz4740_sadc_s *) opaque;
 
-    switch (addr)
-    {
-    	case 0x10:
-    		return s->adsame;
-    	case 0x14:
-    		return s->adwait;
-    	case 0x1c:
-    		return s->adbdat;
-    	case 0x20:
-    		return s->adsdat;
-    	default:
+    switch (addr) {
+    case 0x10:
+        return s->adsame;
+    case 0x14:
+        return s->adwait;
+    case 0x1c:
+        return s->adbdat;
+    case 0x20:
+        return s->adsdat;
+    default:
         cpu_abort(s->soc->env,
-                  "jz4740_sdac_read16 undefined addr " TARGET_FMT_plx "  \n", addr);
+                  "jz4740_sdac_read16 undefined addr " TARGET_FMT_plx "\n",
+                  addr);
     }
-    return (0);
+    return 0;
 }
 
 static uint32_t jz4740_sdac_read32(void *opaque, target_phys_addr_t addr)
 {
     struct jz4740_sadc_s *s = (struct jz4740_sadc_s *) opaque;
-    switch (addr)
-    {
-    	case 0x4:
-    		return s->adcfg;
-    	case 0x18:
-    		/*TODO: Other type format*/
-    		if (s->read_index==0)
-    		{
-    			s->read_index ++;
-    			return (((s->x) & 0x7fff) | ((s->y & 0x7ffff) << 16));
-    		}
-    		else
-    		{
-    			s->read_index = 0;
-    			return (0x3fff);
-    		}
-    	default:
+    switch (addr) {
+    case 0x4:
+        return s->adcfg;
+    case 0x18:
+        /*TODO: Other type format*/
+        if (s->read_index == 0) {
+            s->read_index ++;
+            return ((s->x) & 0x7fff) | ((s->y & 0x7ffff) << 16);
+        } else {
+            s->read_index = 0;
+            return 0x3fff;
+        }
+    default:
         cpu_abort(s->soc->env,
-                  "jz4740_sdac_read32 undefined addr " TARGET_FMT_plx "  \n", addr);
+                  "jz4740_sdac_read32 undefined addr " TARGET_FMT_plx "\n",
+                  addr);
     }
-    return (0);
+    return 0;
 }
 
 static void jz4740_sadc_write8(void *opaque, target_phys_addr_t addr,
@@ -2799,23 +2748,25 @@ static void jz4740_sadc_write8(void *opaque, target_phys_addr_t addr,
 {
     struct jz4740_sadc_s *s = (struct jz4740_sadc_s *) opaque;
 
-    debug_out(DEBUG_SADC, "jz4740_sadc_write8 addr " TARGET_FMT_plx " value %x\n", addr, value);
+    debug_out(DEBUG_SADC,
+              "jz4740_sadc_write8 addr " TARGET_FMT_plx " value %x\n",
+              addr, value);
 
-    switch (addr)
-    {
-    	case 0x0:
-    		s->adena = value & 0x7;
-    		s->tchen = value & 0x4;
-    		break;
-    	case 0x8:
-    		s->adctrl = value & 0x1f;
-    		break;
-    	case 0xc:
-    		s->adstate &= ~(value & 0x1f);
-    		break;
-    	default:
+    switch (addr) {
+    case 0x0:
+        s->adena = value & 0x7;
+        s->tchen = value & 0x4;
+        break;
+    case 0x8:
+        s->adctrl = value & 0x1f;
+        break;
+    case 0xc:
+        s->adstate &= ~(value & 0x1f);
+        break;
+    default:
         cpu_abort(s->soc->env,
-                  "jz4740_sadc_write8 undefined addr " TARGET_FMT_plx "  value %x \n", addr,value);
+                  "jz4740_sadc_write8 undefined addr " TARGET_FMT_plx
+                  " value %x \n", addr,value);
     }
 }
 
@@ -2824,58 +2775,61 @@ static void jz4740_sadc_write16(void *opaque, target_phys_addr_t addr,
 {
     struct jz4740_sadc_s *s = (struct jz4740_sadc_s *) opaque;
 
-    debug_out(DEBUG_SADC, "jz4740_sadc_write16 addr " TARGET_FMT_plx "  value %x\n", addr, value);
+    debug_out(DEBUG_SADC,
+              "jz4740_sadc_write16 addr " TARGET_FMT_plx " value %x\n",
+              addr, value);
 
-    switch (addr)
-    {
-    	case 0x10:
-    		s->adsame = value & 0xffff;
-    		break;
-    	case 0x14:
-    		s->adsdat = value & 0xffff;
-    		break;
-    	case 0x1c:
-    		s->adbdat = 0x0;
-    	case 0x20:
-    		s->adsdat = 0x0;
-    	default:
-          cpu_abort(s->soc->env,
-                  "jz4740_sadc_write16 undefined addr " TARGET_FMT_plx "  value %x \n", addr,value);
+    switch (addr) {
+    case 0x10:
+        s->adsame = value & 0xffff;
+        break;
+    case 0x14:
+        s->adsdat = value & 0xffff;
+        break;
+    case 0x1c:
+        s->adbdat = 0x0;
+    case 0x20:
+        s->adsdat = 0x0;
+    default:
+        cpu_abort(s->soc->env,
+                  "jz4740_sadc_write16 undefined addr " TARGET_FMT_plx
+                  " value %x \n", addr,value);
     }
 }
 
 static void jz4740_sadc_write32(void *opaque, target_phys_addr_t addr,
-                             uint32_t value)
+                                uint32_t value)
 {
     struct jz4740_sadc_s *s = (struct jz4740_sadc_s *) opaque;
 
+    debug_out(DEBUG_SADC,
+              "jz4740_sadc_write32 addr " TARGET_FMT_plx " value %x\n",
+              addr, value);
 
-    debug_out(DEBUG_SADC, "jz4740_sadc_write32 addr " TARGET_FMT_plx "  value %x\n", addr, value);
-
-    switch (addr)
-    {
-    	case 0x4:
-    		s->adcfg = value & 0xc007ffff;
-    		s->ex_in = (value & 0x40000000)>>30;
-    		s->xyz = (value & 0x6fff)>>13;
-    		s->snum = ((value & 0x1cff)>>10)+1;
-    		break;
-    	case 18:
-    		s->adtch = value & 0x8fff8fff;
-    		break;
-    	default:
-          cpu_abort(s->soc->env,
-                  "jz4740_sadc_write32 undefined addr " TARGET_FMT_plx "  value %x \n", addr,value);
+    switch (addr) {
+    case 0x4:
+        s->adcfg = value & 0xc007ffff;
+        s->ex_in = (value & 0x40000000)>>30;
+        s->xyz = (value & 0x6fff)>>13;
+        s->snum = ((value & 0x1cff)>>10)+1;
+        break;
+    case 18:
+        s->adtch = value & 0x8fff8fff;
+        break;
+    default:
+        cpu_abort(s->soc->env,
+                  "jz4740_sadc_write32 undefined addr " TARGET_FMT_plx
+                  " value %x \n", addr,value);
     }
 }
 
 static void jz4740_sadc_reset(struct jz4740_sadc_s *s)
 {
-	s->adcfg = 0x0002002c;
-	s->tchen = 0;
-	s->snum = 1;
-	s->xyz = 0;
-	s->ex_in = 0;
+    s->adcfg = 0x0002002c;
+    s->tchen = 0;
+    s->snum = 1;
+    s->xyz = 0;
+    s->ex_in = 0;
 }
 
 static CPUReadMemoryFunc *jz4740_sadc_readfn[] = {
@@ -2893,8 +2847,8 @@ static CPUWriteMemoryFunc *jz4740_sadc_writefn[] = {
 static struct jz4740_sadc_s *jz4740_sadc_init(struct jz_state_s *soc,
                                             qemu_irq irq)
 {
-	int iomemtype;
-	struct jz4740_sadc_s *s;
+    int iomemtype;
+    struct jz4740_sadc_s *s;
 
     s = (struct jz4740_sadc_s *)
             qemu_mallocz(sizeof(struct jz4740_sadc_s));
@@ -2902,8 +2856,8 @@ static struct jz4740_sadc_s *jz4740_sadc_init(struct jz_state_s *soc,
     s->irq = irq;
     s->soc = soc;
 
-	qemu_add_mouse_event_handler(jz4740_touchscreen_event, s, 1,
-    									       "QEMU JZ4740 Touchscreen");
+    qemu_add_mouse_event_handler(jz4740_touchscreen_event, s, 1,
+                                 "QEMU JZ4740 Touchscreen");
 
     jz4740_sadc_reset(s);
 
@@ -2929,8 +2883,7 @@ struct jz_state_s *jz4740_init(unsigned long sdram_size,
     s->mpu_model = jz4740;
     s->env = cpu_init("jz4740");
 
-    if (!s->env)
-    {
+    if (!s->env) {
         fprintf(stderr, "Unable to find CPU definition\n");
         exit(1);
     }
@@ -2955,7 +2908,6 @@ struct jz_state_s *jz4740_init(unsigned long sdram_size,
     cpu_mips_irq_init_cpu(s->env);
     cpu_mips_clock_init(s->env);
 
-
     /* Clocks */
     jz_clk_init(s, osc_extal_freq);
 
@@ -2970,8 +2922,9 @@ struct jz_state_s *jz4740_init(unsigned long sdram_size,
     s->dma = jz4740_dma_init(s, intc[20]);
     s->sadc = jz4740_sadc_init(s,intc[12]);
 
-    if (serial_hds[0])
+    if (serial_hds[0]) {
         serial_mm_init(0x10030000, 2, intc[9], 57600, serial_hds[0], 1, 0);
+    }
 
     return s;
 }

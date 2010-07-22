@@ -2699,7 +2699,7 @@ static uint32_t jz4740_sadc_read8(void *opaque, target_phys_addr_t addr)
     return 0;
 }
 
-static uint32_t jz4740_sdac_read16(void *opaque, target_phys_addr_t addr)
+static uint32_t jz4740_sadc_read16(void *opaque, target_phys_addr_t addr)
 {
     struct jz4740_sadc_s *s = (struct jz4740_sadc_s *) opaque;
 
@@ -2714,13 +2714,13 @@ static uint32_t jz4740_sdac_read16(void *opaque, target_phys_addr_t addr)
         return s->adsdat;
     default:
         cpu_abort(s->soc->env,
-                  "jz4740_sdac_read16 undefined addr " TARGET_FMT_plx "\n",
+                  "jz4740_sadc_read16 undefined addr " TARGET_FMT_plx "\n",
                   addr);
     }
     return 0;
 }
 
-static uint32_t jz4740_sdac_read32(void *opaque, target_phys_addr_t addr)
+static uint32_t jz4740_sadc_read32(void *opaque, target_phys_addr_t addr)
 {
     struct jz4740_sadc_s *s = (struct jz4740_sadc_s *) opaque;
     switch (addr) {
@@ -2737,7 +2737,7 @@ static uint32_t jz4740_sdac_read32(void *opaque, target_phys_addr_t addr)
         }
     default:
         cpu_abort(s->soc->env,
-                  "jz4740_sdac_read32 undefined addr " TARGET_FMT_plx "\n",
+                  "jz4740_sadc_read32 undefined addr " TARGET_FMT_plx "\n",
                   addr);
     }
     return 0;
@@ -2834,8 +2834,8 @@ static void jz4740_sadc_reset(struct jz4740_sadc_s *s)
 
 static CPUReadMemoryFunc *jz4740_sadc_readfn[] = {
     jz4740_sadc_read8,
-    jz4740_sdac_read16,
-    jz4740_sdac_read32,
+    jz4740_sadc_read16,
+    jz4740_sadc_read32,
 };
 
 static CPUWriteMemoryFunc *jz4740_sadc_writefn[] = {

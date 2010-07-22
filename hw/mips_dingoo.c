@@ -43,11 +43,10 @@
 
 
 
-#define DINGOO_RAM_SIZE       (0x2000000) /*32M */
-#define DINGOO_OSC_EXTAL     (12000000)   /*12MHZ */
+#define DINGOO_RAM_SIZE      (0x2000000)  /* 32MB */
+#define DINGOO_OSC_EXTAL     (12000000)   /* 12MHz */
 
-struct mips_dingoo_s
-{
+struct mips_dingoo_s {
     struct jz_state_s *soc;
 
     struct nand_bflash_s *nand;
@@ -58,16 +57,16 @@ static uint32_t dingoo_nand_read8(void *opaque, target_phys_addr_t addr)
     struct mips_dingoo_s *s = (struct mips_dingoo_s *) opaque;
 
     switch (addr) {
-        case 0x8000: /*NAND_COMMAND*/
-        case 0x10000: /*NAND_ADDRESS*/
-            jz4740_badwidth_read8(s,addr);
-            break;
-        case 0x0: /*NAND_DATA*/
-            return nandb_read_data8(s->nand);
-            break;
-        default:
-            jz4740_badwidth_read8(s,addr);
-            break;
+    case 0x8000:  /*NAND_COMMAND*/
+    case 0x10000: /*NAND_ADDRESS*/
+        jz4740_badwidth_read8(s,addr);
+        break;
+    case 0x0:     /*NAND_DATA*/
+        return nandb_read_data8(s->nand);
+        break;
+    default:
+        jz4740_badwidth_read8(s,addr);
+        break;
     }
     return 0;
 }
@@ -80,18 +79,18 @@ static void dingoo_nand_write8(void *opaque, target_phys_addr_t addr,
     //printf("write addr %x value %x \n",addr,value);
 
     switch (addr) {
-        case 0x8000: /*NAND_COMMAND*/
-            nandb_write_command(s->nand,value);
-            break;
-        case 0x10000: /*NAND_ADDRESS*/
-            nandb_write_address(s->nand,value);
-            break;
-        case 0x0: /*NAND_DATA*/
-            nandb_write_data8(s->nand,value);
-            break;
-        default:
-            jz4740_badwidth_write8(s,addr,value);
-            break;
+    case 0x8000:  /*NAND_COMMAND*/
+        nandb_write_command(s->nand,value);
+        break;
+    case 0x10000: /*NAND_ADDRESS*/
+        nandb_write_address(s->nand,value);
+        break;
+    case 0x0:     /*NAND_DATA*/
+        nandb_write_data8(s->nand,value);
+        break;
+    default:
+        jz4740_badwidth_write8(s,addr,value);
+        break;
     }
 }
 
@@ -198,9 +197,7 @@ static void mips_dingoo_init(ram_addr_t ram_size,
         fprintf(stderr, "boot from nand failed\n");
         exit(-1);
     }
-
 }
-
 
 
 

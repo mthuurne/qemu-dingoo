@@ -197,6 +197,12 @@ static const struct {
     [0xd5] = { 2048,	8,	0, 0, LP_OPTIONS },
     [0xb5] = { 2048,	16,	0, 0, LP_OPTIONS16 },
     [0xc5] = { 2048,	16,	0, 0, LP_OPTIONS16 },
+
+    /* 32 Gigabit */
+    [0xa7] = { 4096,    8,  0, 0, LP_OPTIONS },
+    [0xd7] = { 4096,    8,  0, 0, LP_OPTIONS },
+    [0xb7] = { 4096,    16, 0, 0, LP_OPTIONS16 },
+    [0xc7] = { 4096,    16, 0, 0, LP_OPTIONS16 },
 };
 
 static void nand_reset(NANDFlashState *s)

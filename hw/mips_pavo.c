@@ -55,7 +55,7 @@
 struct mips_pavo_s {
     struct jz_state_s *soc;
 
-    struct nand_bflash_s *nand;
+    NANDFlashState *nand;
 };
 
 static uint32_t pavo_nand_read8(void *opaque, target_phys_addr_t addr)
@@ -65,13 +65,13 @@ static uint32_t pavo_nand_read8(void *opaque, target_phys_addr_t addr)
     switch (addr) {
     case 0x8000:  /*NAND_COMMAND*/
     case 0x10000: /*NAND_ADDRESS*/
-        jz4740_badwidth_read8(s,addr);
+        jz4740_badwidth_read8(s, addr);
         break;
     case 0x0:     /*NAND_DATA*/
-        return nandb_read_data8(s->nand);
-        break;
+        nand_setpins(s->nand, 0, 0, 0, 1, 0);
+        return nand_getio(s->nand);
     default:
-        jz4740_badwidth_read8(s,addr);
+        jz4740_badwidth_read8(s, addr);
         break;
     }
     return 0;
@@ -86,16 +86,19 @@ static void pavo_nand_write8(void *opaque, target_phys_addr_t addr,
 
     switch (addr) {
     case 0x8000:  /*NAND_COMMAND*/
-        nandb_write_command(s->nand,value);
+        nand_setpins(s->nand, 1, 0, 0, 1, 0);
+        nand_setio(s->nand, value);
         break;
     case 0x10000: /*NAND_ADDRESS*/
-        nandb_write_address(s->nand,value);
+        nand_setpins(s->nand, 0, 1, 0, 1, 0);
+        nand_setio(s->nand, value);
         break;
     case 0x0:     /*NAND_DATA*/
-        nandb_write_data8(s->nand,value);
+        nand_setpins(s->nand, 0, 0, 0, 1, 0);
+        nand_setio(s->nand, value);
         break;
     default:
-        jz4740_badwidth_write8(s,addr,value);
+        jz4740_badwidth_write8(s, addr, value);
         break;
     }
 }
@@ -117,7 +120,7 @@ static void pavo_nand_setup(struct mips_pavo_s *s)
     int iomemtype;
 
     /*K9K8G08U0*/
-    s->nand = nandb_init(NAND_MFR_SAMSUNG,0xd3);
+    s->nand = nand_init(NAND_MFR_SAMSUNG, 0xd3);
 
     iomemtype = cpu_register_io_memory(pavo_nand_readfn, pavo_nand_writefn, s);
     cpu_register_physical_memory(0x18000000, 0x20000, iomemtype);

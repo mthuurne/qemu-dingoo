@@ -215,7 +215,7 @@ obj-ppc-y += ppce500_mpc8544ds.o
 obj-ppc-$(CONFIG_KVM) += kvm_ppc.o
 obj-ppc-$(CONFIG_FDT) += device_tree.o
 
-obj-mips-y = mips_r4k.o mips_jazz.o mips_malta.o mips_mipssim.o mips_pavo.o mips_dingoo.o nand_bpage.o sd.o
+obj-mips-y = mips_r4k.o mips_jazz.o mips_malta.o mips_mipssim.o mips_pavo.o mips_dingoo.o nand.o sd.o
 obj-mips-y += mips_jz.o mips_jz_clk.o
 obj-mips-y += mips_addr.o mips_timer.o mips_int.o
 obj-mips-y += vga.o i8259.o

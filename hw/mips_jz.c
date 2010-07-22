@@ -30,6 +30,8 @@
 #include "qemu-timer.h"
 #include "qemu-char.h"
 #include "flash.h"
+#include "sd.h"
+#include "blockdev.h"
 #include "soc_dma.h"
 #include "audio/audio.h"
 #include "pc.h"
@@ -47,6 +49,7 @@
 #define DEBUG_LCDC                      (1<<0x5)
 #define DEBUG_DMA                      (1<<0x6)
 #define DEBUG_SADC                      (1<<0x7)
+#define DEBUG_MSC                       (1<<0x8)
 #define DEBUG_ALL                         (0xffffffff)
 #define  DEBUG_FLAG                    DEBUG_ALL
 
@@ -2867,6 +2870,441 @@ static struct jz4740_sadc_s *jz4740_sadc_init(struct jz_state_s *soc,
     return s;
 }
 
+struct jz4740_msc_s {
+    qemu_irq irq;
+
+    target_phys_addr_t base;
+    struct jz_state_s *soc;
+
+    /* Registers. */
+    uint8_t  clock_rate;
+    uint32_t status;
+    uint32_t control;
+    uint16_t response_timeout;
+    uint16_t read_timeout;
+    uint16_t block_length;
+    uint16_t number_of_blocks;
+    uint16_t interrupt_mask;
+    uint16_t interrupt_status;
+    uint8_t  command;
+    uint32_t argument;
+    /* Response FIFO.
+     * The SD emulation code uses 8-bit values, which are translated to 16-bit
+     * values when read from the MSC.
+     */
+    uint8_t  response[17];
+    uint8_t  response_len;
+    uint8_t  response_index;
+};
+
+/* Status flags. */
+#define MSC_STAT_IS_RESETTING           (1 << 15)
+#define MSC_STAT_SDIO_INT_ACTIVE        (1 << 14)
+#define MSC_STAT_PRG_DONE               (1 << 13)
+#define MSC_STAT_DATA_TRAN_DONE         (1 << 12)
+#define MSC_STAT_END_CMD_RES            (1 << 11)
+#define MSC_STAT_DATA_FIFO_AFULL        (1 << 10)
+#define MSC_STAT_IS_READWAIT            (1 << 9)
+#define MSC_STAT_CLK_EN                 (1 << 8)
+#define MSC_STAT_DATA_FIFO_FULL         (1 << 7)
+#define MSC_STAT_DATA_FIFO_EMPTY        (1 << 6)
+#define MSC_STAT_CRC_RES_ERR            (1 << 5)
+#define MSC_STAT_CRC_READ_ERROR         (1 << 4)
+#define MSC_STAT_CRC_WRITE_OK           (0 << 2)
+#define MSC_STAT_CRC_WRITE_FAIL         (1 << 2)
+#define MSC_STAT_CRC_WRITE_NOCRC        (2 << 2)
+#define MSC_STAT_TIME_OUT_RES           (1 << 1)
+#define MSC_STAT_TIME_OUT_READ          (1 << 0)
+
+/* Control flags. */
+#define MSC_CTRL_IO_ABORT               (1 << 11)
+#define MSC_CTRL_BUS_WIDTH_MASK         (3 << 9)
+#define MSC_CTRL_BUS_WIDTH_1BIT         (0 << 9)
+#define MSC_CTRL_BUS_WIDTH_4BIT         (2 << 9)
+#define MSC_CTRL_DMA_EN                 (1 << 8)
+#define MSC_CTRL_INIT                   (1 << 7)
+#define MSC_CTRL_BUSY                   (1 << 6)
+#define MSC_CTRL_STREAM_BLOCK           (1 << 5)
+#define MSC_CTRL_WRITE_READ             (1 << 4)
+#define MSC_CTRL_DATA_EN                (1 << 3)
+#define MSC_CTRL_RESPONSE_FORMAT_MASK   (7 << 0)
+#define MSC_CTRL_RESPONSE_FORMAT_NONE   (0 << 0)
+#define MSC_CTRL_RESPONSE_FORMAT_R1     (1 << 0)
+#define MSC_CTRL_RESPONSE_FORMAT_R2     (2 << 0)
+#define MSC_CTRL_RESPONSE_FORMAT_R3     (3 << 0)
+#define MSC_CTRL_RESPONSE_FORMAT_R4     (4 << 0)
+#define MSC_CTRL_RESPONSE_FORMAT_R5     (5 << 0)
+#define MSC_CTRL_RESPONSE_FORMAT_R6     (6 << 0)
+
+/* Interrupt flags. */
+#define MSC_INT_SDIO                    (1 << 7)
+#define MSC_INT_TXFIFO_WR_REQ           (1 << 6)
+#define MSC_INT_RXFIFO_RD_REQ           (1 << 5)
+#define MSC_INT_END_CMD_RES             (1 << 2)
+#define MSC_INT_PRG_DONE                (1 << 1)
+#define MSC_INT_DATA_TRAN_DONE          (1 << 0)
+
+static void jz4740_msc_reset(struct jz4740_msc_s *s)
+{
+    s->clock_rate = 0;
+    s->status = MSC_STAT_DATA_FIFO_EMPTY;
+    s->control = 0;
+    s->response_timeout = 0x0040;
+    s->read_timeout = 0xFFFF;
+    s->block_length = 0;
+    s->number_of_blocks = 0;
+    s->interrupt_mask = 0x00FF;
+    s->interrupt_status = 0;
+    s->command = 0;
+    s->argument = 0;
+    /* Initial contents of the FIFOs are undefined, but I like determinism. */
+    memset(s->response, 0, sizeof(s->response));
+    s->response_len = 0;
+    s->response_index = 0;
+}
+
+static void jz4740_msc_update_interrupt(struct jz4740_msc_s *s)
+{
+    int level = (s->interrupt_status & ~s->interrupt_mask) != 0;
+    debug_out(DEBUG_MSC, "MSC IRQ := %d\n", level);
+    qemu_set_irq(s->irq, level);
+}
+
+static void jz4740_msc_start_operation(struct jz4740_msc_s *s)
+{
+    int rsplen, error;
+    SDRequest req = {
+        .cmd = s->command,
+        .arg = s->argument,
+        .crc = 0, /* CRC validation is not implemented either */
+    };
+
+    debug_out(DEBUG_MSC, "jz4740_msc_start_operation\n");
+
+    if (s->command == 12) {
+        fprintf(stderr, "stop!\n");
+    } else if (s->command == 17) {
+        assert((s->argument % 512) == 0);
+        fprintf(stderr, "block read of sector %d\n", s->argument / 512);
+    } else if (s->command == 18) {
+        assert((s->argument % 512) == 0);
+        fprintf(stderr, "multi block read starting with sector %d\n",
+                s->argument / 512);
+    } else {
+        fprintf(stderr, "jz4740_msc_start_operation %02X\n", s->command);
+    }
+    rsplen = sd_do_command(s->soc->sd, &req, &s->response[1]);
+    error = 0;
+    switch (s->control & MSC_CTRL_RESPONSE_FORMAT_MASK) {
+    case MSC_CTRL_RESPONSE_FORMAT_NONE: /* no response */
+        s->response_len = 0;
+        break;
+    case MSC_CTRL_RESPONSE_FORMAT_R1:
+    case MSC_CTRL_RESPONSE_FORMAT_R6:
+        if (rsplen == 4) {
+            s->response[0] = s->command;
+            s->response_len = 5;
+        } else {
+            error = 1;
+        }
+        break;
+    case MSC_CTRL_RESPONSE_FORMAT_R2:
+        if (rsplen == 16) {
+            s->response[0] = 0x3F;
+            s->response_len = 16;
+        } else {
+            error = 1;
+        }
+        break;
+    case MSC_CTRL_RESPONSE_FORMAT_R3:
+        if (rsplen == 4) {
+            s->response[0] = 0x3F;
+            s->response_len = 5;
+        } else {
+            error = 1;
+        }
+        break;
+    case MSC_CTRL_RESPONSE_FORMAT_R4: /* SDIO, not supported */
+    case MSC_CTRL_RESPONSE_FORMAT_R5: /* SDIO, not supported */
+    default: /* reserved */
+        cpu_abort(s->soc->env,
+            "jz4740_msc_start_operation invalid response type %d\n",
+            s->control & MSC_CTRL_RESPONSE_FORMAT_MASK);
+    }
+    if (error) {
+        fprintf(stderr, "response: error, %d bytes (%d from qemu)\n",
+                s->response_len, rsplen);
+        s->response_len = 0;
+        s->status |= MSC_STAT_CRC_RES_ERR;
+    } else {
+        fprintf(stderr, "response: %d bytes (%d from qemu)\n",
+                s->response_len, rsplen);
+        s->status &= ~MSC_STAT_CRC_RES_ERR;
+    }
+    s->response_index = 0;
+    if (!error) {
+        if (s->command == 12) { /* STOP_TRANSMISSION */
+            s->status |= MSC_STAT_PRG_DONE;
+            s->interrupt_status |= MSC_INT_PRG_DONE;
+        } else if (s->control & MSC_CTRL_DATA_EN) {
+            if (s->control & MSC_CTRL_WRITE_READ) { /* write */
+                s->status |= MSC_STAT_DATA_FIFO_EMPTY;
+                s->interrupt_status |= MSC_INT_TXFIFO_WR_REQ;
+            } else { /* read */
+                s->status |= MSC_STAT_DATA_FIFO_AFULL;
+                s->status &= ~MSC_STAT_DATA_FIFO_EMPTY;
+                s->interrupt_status |= MSC_INT_RXFIFO_RD_REQ;
+            }
+        }
+    }
+    s->status |= MSC_STAT_END_CMD_RES;
+    s->interrupt_status |= MSC_INT_END_CMD_RES;
+    jz4740_msc_update_interrupt(s);
+}
+
+static uint32_t jz4740_msc_read8(void *opaque, target_phys_addr_t addr)
+{
+    struct jz4740_msc_s *s = (struct jz4740_msc_s *) opaque;
+
+    switch (addr) {
+    case 0x2C: /* MSC_CMD */
+        return s->command;
+    default:
+        cpu_abort(s->soc->env,
+                  "jz4740_msc_read8 undefined addr " TARGET_FMT_plx "\n",
+                  addr);
+        return 0;
+    }
+}
+
+static uint32_t jz4740_msc_read16(void *opaque, target_phys_addr_t addr)
+{
+    struct jz4740_msc_s *s = (struct jz4740_msc_s *) opaque;
+    uint16_t value;
+
+    switch (addr) {
+    case 0x08: /* MSC_CLKRT */
+        return s->clock_rate;
+    case 0x10: /* MSC_RESTO */
+        return s->response_timeout;
+    case 0x14: /* MSC_RDTO */
+        return s->read_timeout;
+    case 0x18: /* MSC_BLKLEN */
+        return s->block_length;
+    case 0x1C: /* MSC_NOB */
+        return s->number_of_blocks;
+    case 0x20:
+        debug_out(DEBUG_MSC, "fake: MSC_SNOB\n");
+        return 0;
+    case 0x24: /* MSC_IMASK */
+        return s->interrupt_mask;
+    case 0x28: /* MSC_IREG */
+        return s->interrupt_status;
+    case 0x34: /* MSC_RES */
+        value = 0;
+        if (s->response_index < s->response_len) {
+            value = (value << 8) | s->response[s->response_index++];
+        }
+        if (s->response_index < s->response_len) {
+            value = (value << 8) | s->response[s->response_index++];
+        }
+        return value;
+    default:
+        cpu_abort(s->soc->env,
+                    "jz4740_msc_read16 undefined addr " TARGET_FMT_plx "\n",
+                    addr);
+        return 0;
+    }
+}
+
+static uint32_t jz4740_msc_read32(void *opaque, target_phys_addr_t addr)
+{
+    struct jz4740_msc_s *s = (struct jz4740_msc_s *) opaque;
+    SDState *sd = s->soc->sd;
+    uint32_t value;
+    int i;
+
+    switch (addr) {
+    case 0x04: /* MSC_STAT */
+        //fprintf(stderr, "MSC_STAT read: %08X\n", s->status);
+        return s->status;
+    case 0x0C: /* MSC_CMDAT */
+        return s->control & 0x0F7F;
+    case 0x30: /* MSC_ARG */
+        return s->argument;
+    case 0x38: /* MSC_RXFIFO */
+        value = 0;
+        for (i = 0; i < 4; i++) {
+            if (sd_data_ready(sd)) {
+                value = (value >> 8) | ((uint32_t)sd_read_data(sd) << 24);
+            }
+        }
+        if (!sd_data_ready(sd)) {
+            s->status |= MSC_STAT_DATA_FIFO_EMPTY
+                        |  MSC_STAT_DATA_TRAN_DONE;
+            s->status &= ~MSC_STAT_DATA_FIFO_AFULL;
+            s->interrupt_status |= MSC_INT_DATA_TRAN_DONE;
+            s->interrupt_status &= ~MSC_INT_RXFIFO_RD_REQ;
+            jz4740_msc_update_interrupt(s);
+            fprintf(stderr, ".\n");
+        }
+        return value;
+    default:
+        cpu_abort(s->soc->env,
+                    "jz4740_msc_read32 undefined addr " TARGET_FMT_plx "\n",
+                    addr);
+        return 0;
+    }
+}
+
+static void jz4740_msc_write8(void *opaque, target_phys_addr_t addr,
+                             uint32_t value)
+{
+    struct jz4740_msc_s *s = (struct jz4740_msc_s *) opaque;
+
+    debug_out(DEBUG_MSC,
+              "jz4740_msc_write8 addr " TARGET_FMT_plx " value %x\n",
+              addr, value);
+
+    switch (addr) {
+    case 0x2C: /* MSC_CMD */
+        s->command = value & 0x3F;
+        break;
+    default:
+        cpu_abort(s->soc->env,
+                  "jz4740_msc_write8 undefined addr " TARGET_FMT_plx
+                  " value %x \n", addr, value);
+    }
+}
+
+static void jz4740_msc_write16(void *opaque, target_phys_addr_t addr,
+                             uint32_t value)
+{
+    struct jz4740_msc_s *s = (struct jz4740_msc_s *) opaque;
+
+    debug_out(DEBUG_MSC,
+              "jz4740_msc_write16 addr " TARGET_FMT_plx " value %x\n",
+              addr, value);
+
+    switch (addr) {
+    case 0x00: /* MSC_STRPCL */
+        switch (value & 0x03) {
+        case 0: /* do nothing */
+            break;
+        case 1: /* stop */
+            s->status &= ~MSC_STAT_CLK_EN;
+            break;
+        case 2: /* start */
+            s->status |= MSC_STAT_CLK_EN;
+            break;
+        case 3: /* reserved */
+            break;
+        }
+        if (value & 0x08) {
+            jz4740_msc_reset(s);
+        } else if (value & 0x04) {
+            if (s->status & MSC_STAT_CLK_EN) {
+                jz4740_msc_start_operation(s);
+            }
+        }
+        break;
+    case 0x08: /* MSC_CLKRT */
+        s->clock_rate = value & 0x07;
+        break;
+    case 0x10: /* MSC_RESTO */
+        s->response_timeout = value & 0x00FF;
+        break;
+    case 0x14: /* MSC_RDTO */
+        s->read_timeout = value;
+        break;
+    case 0x18: /* MSC_BLKLEN */
+        s->block_length = value & 0x0FFF;
+        break;
+    case 0x1C: /* MSC_NOB */
+        s->number_of_blocks = value;
+        break;
+    case 0x24: /* MSC_IMASK */
+        s->interrupt_mask = value & 0xE7;
+        jz4740_msc_update_interrupt(s);
+        break;
+    case 0x28: /* MSC_IREG */
+        /* Writing 1 to one of the lower 3 bits clears the corresponding
+            interrupt. */
+        s->interrupt_status &= ~(value & 0x07);
+        jz4740_msc_update_interrupt(s);
+        break;
+    default:
+        cpu_abort(s->soc->env,
+                  "jz4740_msc_write16 undefined addr " TARGET_FMT_plx
+                  " value %x\n", addr, value);
+    }
+}
+
+static void jz4740_msc_write32(void *opaque, target_phys_addr_t addr,
+                             uint32_t value)
+{
+    struct jz4740_msc_s *s = (struct jz4740_msc_s *) opaque;
+
+    debug_out(DEBUG_MSC,
+              "jz4740_msc_write32 addr " TARGET_FMT_plx " value %x\n",
+              addr, value);
+
+    switch (addr) {
+    case 0x0C: /* MSC_CMDAT */
+        s->control = value & 0x0FFF;
+        break;
+    case 0x30: /* MSC_ARG */
+        s->argument = value;
+        break;
+    case 0x3C: /* MSC_TXFIFO */
+        debug_out(DEBUG_MSC, "ignore: MSC_TXFIFO\n");
+        break;
+    default:
+        cpu_abort(s->soc->env,
+            "jz4740_msc_write32 undefined addr " TARGET_FMT_plx " value %x \n",
+            addr, value);
+    }
+}
+
+static CPUReadMemoryFunc *jz4740_msc_readfn[] = {
+    jz4740_msc_read8,
+    jz4740_msc_read16,
+    jz4740_msc_read32,
+};
+
+static CPUWriteMemoryFunc *jz4740_msc_writefn[] = {
+    jz4740_msc_write8,
+    jz4740_msc_write16,
+    jz4740_msc_write32,
+};
+
+static struct jz4740_msc_s *jz4740_msc_init(struct jz_state_s *soc,
+                                            qemu_irq irq)
+{
+    int iomemtype;
+    struct jz4740_msc_s *s;
+    DriveInfo *dinfo;
+
+    s = (struct jz4740_msc_s *) qemu_mallocz(sizeof(struct jz4740_msc_s));
+    s->base = JZ4740_PHYS_BASE(JZ4740_MSC_BASE);
+    s->irq = irq;
+    s->soc = soc;
+
+    dinfo = drive_get(IF_SD, 0, 0);
+    if (dinfo) {
+        soc->sd = sd_init(dinfo->bdrv, 0);
+        /* readonly and insert interrupts not connected */
+        sd_set_cb(soc->sd, 0, 0);
+    }
+
+    jz4740_msc_reset(s);
+
+    iomemtype =
+        cpu_register_io_memory(jz4740_msc_readfn, jz4740_msc_writefn, s);
+    cpu_register_physical_memory(s->base, 0x00001000, iomemtype);
+    return s;
+}
+
 static void jz4740_cpu_reset(void *opaque)
 {
     fprintf(stderr, "%s: UNIMPLEMENTED!", __FUNCTION__);
@@ -2920,7 +3358,8 @@ struct jz_state_s *jz4740_init(unsigned long sdram_size,
     jz4740_tcu_init(s, s->tcu, 0);
     s->lcdc = jz4740_lcdc_init(s, intc[30]);
     s->dma = jz4740_dma_init(s, intc[20]);
-    s->sadc = jz4740_sadc_init(s,intc[12]);
+    s->sadc = jz4740_sadc_init(s, intc[12]);
+    s->msc = jz4740_msc_init(s, intc[14]);
 
     if (serial_hds[0]) {
         serial_mm_init(0x10030000, 2, intc[9], 57600, serial_hds[0], 1, 0);

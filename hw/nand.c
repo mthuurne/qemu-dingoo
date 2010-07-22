@@ -41,12 +41,13 @@
 # define NAND_IOSTATUS_BUSY	(1 << 6)
 # define NAND_IOSTATUS_UNPROTCT	(1 << 7)
 
-# define MAX_PAGE		0x800
-# define MAX_OOB		0x40
+# define MAX_PAGE		0x1000
+# define MAX_OOB		0x80
 
 struct NANDFlashState {
     uint8_t manf_id, chip_id;
-    int size, pages;
+    uint64_t size;
+    int pages;
     int page_shift, oob_shift, erase_shift, addr_shift;
     uint8_t *storage;
     BlockDriverState *bdrv;
@@ -103,6 +104,11 @@ struct NANDFlashState {
 # define PAGE_SECTORS		4
 # define ADDR_SHIFT		16
 # include "nand.c"
+# define PAGE_SIZE		4096
+# define PAGE_SHIFT		12
+# define PAGE_SECTORS		8
+# define ADDR_SHIFT		16
+# include "nand.c"
 
 /* Information based on Linux drivers/mtd/nand/nand_ids.c */
 static const struct {
@@ -156,53 +162,52 @@ static const struct {
     [0x71] = { 256,	8,	9, 5, 0 },
 
     /*
-     * These are the new chips with large page size. The pagesize and the
-     * erasesize is determined from the extended id bytes
+     * These are the new chips with large page size.
      */
 # define LP_OPTIONS	(NAND_SAMSUNG_LP | NAND_NO_READRDY | NAND_NO_AUTOINCR)
 # define LP_OPTIONS16	(LP_OPTIONS | NAND_BUSWIDTH_16)
 
     /* 512 Megabit */
-    [0xa2] = { 64,	8,	0, 0, LP_OPTIONS },
-    [0xf2] = { 64,	8,	0, 0, LP_OPTIONS },
-    [0xb2] = { 64,	16,	0, 0, LP_OPTIONS16 },
-    [0xc2] = { 64,	16,	0, 0, LP_OPTIONS16 },
+    [0xa2] = { 64,	8,	11, 6, LP_OPTIONS },
+    [0xf2] = { 64,	8,	11, 6, LP_OPTIONS },
+    [0xb2] = { 64,	16,	11, 6, LP_OPTIONS16 },
+    [0xc2] = { 64,	16,	11, 6, LP_OPTIONS16 },
 
     /* 1 Gigabit */
-    [0xa1] = { 128,	8,	0, 0, LP_OPTIONS },
-    [0xf1] = { 128,	8,	0, 0, LP_OPTIONS },
-    [0xb1] = { 128,	16,	0, 0, LP_OPTIONS16 },
-    [0xc1] = { 128,	16,	0, 0, LP_OPTIONS16 },
+    [0xa1] = { 128,	8,	11, 6, LP_OPTIONS },
+    [0xf1] = { 128,	8,	11, 6, LP_OPTIONS },
+    [0xb1] = { 128,	16,	11, 6, LP_OPTIONS16 },
+    [0xc1] = { 128,	16,	11, 6, LP_OPTIONS16 },
 
     /* 2 Gigabit */
-    [0xaa] = { 256,	8,	0, 0, LP_OPTIONS },
-    [0xda] = { 256,	8,	0, 0, LP_OPTIONS },
-    [0xba] = { 256,	16,	0, 0, LP_OPTIONS16 },
-    [0xca] = { 256,	16,	0, 0, LP_OPTIONS16 },
+    [0xaa] = { 256,	8,	11, 6, LP_OPTIONS },
+    [0xda] = { 256,	8,	11, 6, LP_OPTIONS },
+    [0xba] = { 256,	16,	11, 6, LP_OPTIONS16 },
+    [0xca] = { 256,	16,	11, 6, LP_OPTIONS16 },
 
     /* 4 Gigabit */
-    [0xac] = { 512,	8,	0, 0, LP_OPTIONS },
-    [0xdc] = { 512,	8,	0, 0, LP_OPTIONS },
-    [0xbc] = { 512,	16,	0, 0, LP_OPTIONS16 },
-    [0xcc] = { 512,	16,	0, 0, LP_OPTIONS16 },
+    [0xac] = { 512,	8,	11, 6, LP_OPTIONS },
+    [0xdc] = { 512,	8,	11, 6, LP_OPTIONS },
+    [0xbc] = { 512,	16,	11, 6, LP_OPTIONS16 },
+    [0xcc] = { 512,	16,	11, 6, LP_OPTIONS16 },
 
     /* 8 Gigabit */
-    [0xa3] = { 1024,	8,	0, 0, LP_OPTIONS },
-    [0xd3] = { 1024,	8,	0, 0, LP_OPTIONS },
-    [0xb3] = { 1024,	16,	0, 0, LP_OPTIONS16 },
-    [0xc3] = { 1024,	16,	0, 0, LP_OPTIONS16 },
+    [0xa3] = { 1024,	8,	11, 6, LP_OPTIONS },
+    [0xd3] = { 1024,	8,	11, 6, LP_OPTIONS },
+    [0xb3] = { 1024,	16,	11, 6, LP_OPTIONS16 },
+    [0xc3] = { 1024,	16,	11, 6, LP_OPTIONS16 },
 
     /* 16 Gigabit */
-    [0xa5] = { 2048,	8,	0, 0, LP_OPTIONS },
-    [0xd5] = { 2048,	8,	0, 0, LP_OPTIONS },
-    [0xb5] = { 2048,	16,	0, 0, LP_OPTIONS16 },
-    [0xc5] = { 2048,	16,	0, 0, LP_OPTIONS16 },
+    [0xa5] = { 2048,	8,	11, 6, LP_OPTIONS },
+    [0xd5] = { 2048,	8,	11, 6, LP_OPTIONS },
+    [0xb5] = { 2048,	16,	11, 6, LP_OPTIONS16 },
+    [0xc5] = { 2048,	16,	11, 6, LP_OPTIONS16 },
 
     /* 32 Gigabit */
-    [0xa7] = { 4096,    8,  0, 0, LP_OPTIONS },
-    [0xd7] = { 4096,    8,  0, 0, LP_OPTIONS },
-    [0xb7] = { 4096,    16, 0, 0, LP_OPTIONS16 },
-    [0xc7] = { 4096,    16, 0, 0, LP_OPTIONS16 },
+    [0xa7] = { 4096,    8,  12, 7, LP_OPTIONS },
+    [0xd7] = { 4096,    8,  12, 7, LP_OPTIONS },
+    [0xb7] = { 4096,    16, 12, 7, LP_OPTIONS16 },
+    [0xc7] = { 4096,    16, 12, 7, LP_OPTIONS16 },
 };
 
 static void nand_reset(NANDFlashState *s)
@@ -366,13 +371,12 @@ void nand_setio(NANDFlashState *s, uint8_t value)
                 return;
             }
         }
-        if (value == NAND_CMD_READ0)
+        if (value == NAND_CMD_READ0) {
             s->offset = 0;
-	else if (value == NAND_CMD_READ1) {
+        } else if (value == NAND_CMD_READ1) {
             s->offset = 0x100;
             value = NAND_CMD_READ0;
-        }
-	else if (value == NAND_CMD_READ2) {
+        } else if (value == NAND_CMD_READ2) {
             s->offset = 1 << s->page_shift;
             value = NAND_CMD_READ0;
         }
@@ -468,14 +472,9 @@ NANDFlashState *nand_init(int manf_id, int chip_id)
         s->bdrv = dinfo->bdrv;
     s->manf_id = manf_id;
     s->chip_id = chip_id;
-    s->size = nand_flash_ids[s->chip_id].size << 20;
-    if (nand_flash_ids[s->chip_id].options & NAND_SAMSUNG_LP) {
-        s->page_shift = 11;
-        s->erase_shift = 6;
-    } else {
-        s->page_shift = nand_flash_ids[s->chip_id].page_shift;
-        s->erase_shift = nand_flash_ids[s->chip_id].erase_shift;
-    }
+    s->size = (uint64_t)nand_flash_ids[s->chip_id].size << 20;
+    s->page_shift = nand_flash_ids[s->chip_id].page_shift;
+    s->erase_shift = nand_flash_ids[s->chip_id].erase_shift;
 
     switch (1 << s->page_shift) {
     case 256:
@@ -486,6 +485,9 @@ NANDFlashState *nand_init(int manf_id, int chip_id)
         break;
     case 2048:
         nand_init_2048(s);
+        break;
+    case 4096:
+        nand_init_4096(s);
         break;
     default:
         hw_error("%s: Unsupported NAND block size.\n", __FUNCTION__);

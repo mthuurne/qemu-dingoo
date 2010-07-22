@@ -198,10 +198,10 @@ static const struct {
     [0xc3] = { 1024,	16,	11, 6, LP_OPTIONS16 },
 
     /* 16 Gigabit */
-    [0xa5] = { 2048,	8,	11, 6, LP_OPTIONS },
-    [0xd5] = { 2048,	8,	11, 6, LP_OPTIONS },
-    [0xb5] = { 2048,	16,	11, 6, LP_OPTIONS16 },
-    [0xc5] = { 2048,	16,	11, 6, LP_OPTIONS16 },
+    [0xa5] = { 2048,	8,	12, 7, LP_OPTIONS },
+    [0xd5] = { 2048,	8,	12, 7, LP_OPTIONS },
+    [0xb5] = { 2048,	16,	12, 7, LP_OPTIONS16 },
+    [0xc5] = { 2048,	16,	12, 7, LP_OPTIONS16 },
 
     /* 32 Gigabit */
     [0xa7] = { 4096,    8,  12, 7, LP_OPTIONS },
